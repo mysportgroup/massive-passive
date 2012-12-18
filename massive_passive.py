@@ -12,6 +12,9 @@ from mplib.processes import SendNscaWorkerPool
 from time import sleep
 from time import time
 import logging
+import signal
+import threading
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,8 @@ BASE_FORMAT_SYSLOG = (
 
 BASE_FORMAT_STDOUT = '%(asctime)s ' + BASE_FORMAT_SYSLOG
 
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format=BASE_FORMAT_STDOUT)
     passive_configs = ConfigDir('./checks.d')
@@ -29,30 +34,29 @@ if __name__ == '__main__':
     send_queue = m.Queue()
 
     stopevent = multiprocessing.Event()
-    worker_pools = list()
+    thread_pool = list()
 
     send_nsca_pool = SendNscaWorkerPool(2, send_queue, stopevent)
-
-
+    thread_pool.append(send_nsca_pool)
 
     for prio, checks in passive_configs.iteritems():
         worker = PassiveChecksWorkerPool(prio, checks, send_queue, stopevent)
-        worker_pools.append(worker)
-
-    for worker in worker_pools:
         worker.start()
-
+        thread_pool.append(worker)
     send_nsca_pool.start()
 
+    def shutdown(signum, sigframe):
+        stopevent.set()
+        for thread in thread_pool:
+            logger.debug('Joining thread %r ...', thread.name)
+            thread.join()
+            logger.debug('Joined thread %r.', thread.name)
+        sys.exit(0)
 
-    #while True:
-    #    try:
-    #        print time(), send_queue.get()
-    #    except Empty:
-    #        sleep(0.1)
+    signal.signal(signal.SIGTERM, shutdown)
 
-
-
+    while not stopevent.is_set():
+        sleep(0.1)
 
 
 
