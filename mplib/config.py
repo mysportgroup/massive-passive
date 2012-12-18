@@ -30,9 +30,6 @@ class ConfigFile(IterableUserDict):
         self.clear()
         self._initialize()
 
-class PassiveCheckConfigFile(ConfigFile):
-    pass
-
 class ConfigDir(IterableUserDict):
     def __init__(self, path):
         IterableUserDict.__init__(self)
@@ -40,7 +37,7 @@ class ConfigDir(IterableUserDict):
 
     def _initialize(self):
         for config in iglob(os.path.join(self.path, '*.cfg')):
-            config = PassiveCheckConfigFile(config)
+            config = ConfigFile(config)
             when = self.setdefault(config['time'], list())
             when.append(config)
 
