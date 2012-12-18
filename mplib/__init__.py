@@ -9,12 +9,11 @@ __copyright__ = '(c) 2012 by mysportgroup.de'
 
 from config import ConfigDir
 from config import ConfigFile
-from config import PassiveCheckConfigFile
 from cmd import passive_check_cmd
 from cmd import send_nsca
 from daemon import daemonize
 
-__all__ = ['ConfigFile', 'PassiveCheckConfigFile', 'ConfigDir', 'passive_check_cmd', 'daemonize', 'send_nsca']
+__all__ = ['ConfigFile', 'ConfigDir', 'passive_check_cmd', 'daemonize', 'send_nsca']
 
 if __name__ == '__main__':
     pass

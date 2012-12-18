@@ -10,7 +10,7 @@ __copyright__ = '(c) 2012 by mysportgroup.de'
 import os
 import sys
 
-def daemonize():
+def daemonize(pidfile, cwd='/'):
 
     try:
         pid = os.fork()
@@ -21,7 +21,7 @@ def daemonize():
         sys.stderr.write(msg)
         sys.exit(1)
 
-    os.chdir('/')
+    os.chdir(cwd)
     os.umask(0)
     os.setsid()
 
@@ -37,7 +37,7 @@ def daemonize():
 
     pid = os.getpid()
     pidfile_fd = os.open(
-        '/tmp/massive_passive.pid',
+        pidfile,
         os.O_CREAT | os.O_EXCL | os.O_RDWR,
         0640
     )

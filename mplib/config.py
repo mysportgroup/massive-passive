@@ -14,15 +14,25 @@ try:
 except ImportError:
     import json
 
+import logging
 from glob import iglob
 from UserDict import IterableUserDict
 
+import logging
+
+logger = logging.getLogger(__name__)
 class ConfigFile(IterableUserDict):
     def __init__(self, path):
         IterableUserDict.__init__(self)
-        self.path = os.path.abspath(path)
+        self.path = os.path.realpath(path)
+        self._initialize()
 
     def _initialize(self):
+        logger = logging.getLogger(
+            '%s.%s'
+            %(self.__module__, self.__class__.__name__)
+        )
+        logger.debug('Initialized with %r.', self.path)
         with open(self.path, 'r', 1) as fp:
             self.update(json.load(fp))
 
@@ -33,9 +43,16 @@ class ConfigFile(IterableUserDict):
 class ConfigDir(IterableUserDict):
     def __init__(self, path):
         IterableUserDict.__init__(self)
-        self.path = os.path.abspath(path)
+        self.path = os.path.realpath(path)
+        self._initialize()
+
 
     def _initialize(self):
+        logger = logging.getLogger(
+            '%s.%s'
+            %(self.__module__, self.__class__.__name__)
+        )
+        logger.debug('Initialized with %r.', self.path)
         for config in iglob(os.path.join(self.path, '*.cfg')):
             config = ConfigFile(config)
             when = self.setdefault(config['time'], list())
