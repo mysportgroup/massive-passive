@@ -33,6 +33,8 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
 
     stdout, stderr = cmd.communicate()
 
+    logger.debug('Command %r returned with %s. stdout was: %r, stderr was: %r', command, cmd.returncode, stdout, stderr)
+
     result = {
         'returncode': cmd.returncode,
         'stdout': stdout,

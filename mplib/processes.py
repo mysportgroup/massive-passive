@@ -23,6 +23,10 @@ class PoolBarer(threading.Thread):
         self.name = self.__class__.__name__ + self.name
         self.queue = queue
         self.stop_event = stop_event
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__module__, self.name)
+        )
 
     def run(self):
         while not self.stop_event.is_set():
@@ -38,25 +42,40 @@ class PoolBarer(threading.Thread):
             except Empty:
                 break
             else:
+                #self.queue.task_done()
                 pool.close()
+                pool.join()
+                self.logger.debug('Closed and joined Pool %r', pool)
         return True
 
 class PassiveChecksWorkerPool(threading.Thread):
-    def __init__(self, period, passive_checks, out_queue, stop_event):
+    def __init__(self, period, passive_checks, out_queue, pool_queue, stop_event):
         super(PassiveChecksWorkerPool, self).__init__()
         self.name = self.__class__.__name__ + self.name
         self.period = period
         self.passive_checks = passive_checks
         self.out_queue = out_queue
+        self.pool_queue = pool_queue
         self.stop_event = stop_event
         self.workers = len(self.passive_checks)
-        self.pool = multiprocessing.Pool(self.workers)
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__module__, self.name)
+        )
+
+        #self.pool = multiprocessing.Pool(self.workers)
 
     def run(self):
         while not self.stop_event.is_set():
+            self.logger.debug('Creating new Pool ...')
+            pool = multiprocessing.Pool(self.workers)
+            self.logger.debug('Pool %r created.', pool)
             for check in self.passive_checks:
-                logger.debug('Adding %r to %r.', check, self.pool)
-                self.pool.apply_async(passive_check_cmd, [check, self.out_queue])
+                self.logger.debug('Adding %r to pool %r.', check, pool)
+                pool.apply_async(passive_check_cmd, [check, self.out_queue])
+                self.logger.debug('Put pool %r to the queue %r for the PoolBarer.', pool, self.pool_queue)
+                self.pool_queue.put(pool)
+            self.logger.debug('Sleeping %s seconds ...', self.period)
             sleep(self.period)
 
 class SendNscaWorkerPool(threading.Thread):
@@ -67,15 +86,20 @@ class SendNscaWorkerPool(threading.Thread):
         self.queue = queue
         self.stop_event = stop_event
         self.pool = multiprocessing.Pool(self.workers)
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__module__, self.name)
+        )
+
 
     def run(self):
         while not self.stop_event.is_set():
             try:
                 check_result = self.queue.get(timeout=0.1)
             except Empty:
-                sleep(0.1)
                 continue
             else:
+                self.logger.debug('Adding check_result %r to pool %r.', check_result, self.pool)
                 self.pool.apply_async(send_nsca, [check_result])
 
 
