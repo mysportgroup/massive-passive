@@ -46,11 +46,14 @@ if __name__ == '__main__':
     send_nsca_pool.start()
 
     def shutdown(signum, sigframe):
+        logger.info('Received SIGTERM ... going down now ...')
         stopevent.set()
+        logger.debug('Stopevent set.')
         for thread in thread_pool:
             logger.debug('Joining thread %r ...', thread.name)
             thread.join()
             logger.debug('Joined thread %r.', thread.name)
+        logger.info('Exiting now!')
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
