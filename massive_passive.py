@@ -6,23 +6,19 @@ __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __version__ = '0.1.0'
 
-from mplib.config import ConfigDir, ConfigFile
-import multiprocessing
-from mplib.processes import PassiveChecksWorkerPool
-from mplib.processes import SendNscaWorkerPool
-from mplib.processes import PoolBarer
-from time import sleep
-from Queue import Queue as PoolQueue
-from time import time
-import logging
-import signal
-import threading
 import os
 import sys
+import signal
+import logging
+from time import sleep
+import multiprocessing
 from mplib import getopts
+from mplib.config import ConfigDir
 from mplib.daemon import daemonize
+from Queue import Queue as PoolQueue
 from logging.handlers import SysLogHandler
-
+from mplib.processes import SendNscaWorkerPool
+from mplib.scheduleing import MassivePassiveScheduler
 
 
 BASE_FORMAT_SYSLOG = (
@@ -68,21 +64,27 @@ if __name__ == '__main__':
     send_nsca_pool = SendNscaWorkerPool(2, send_queue, stopevent)
     thread_list.append(send_nsca_pool)
 
-    for prio, checks in passive_configs.iteritems():
-        #worker = PassiveChecksWorkerPool(prio, checks, send_queue, pool_queue, stopevent)
-        worker = PassiveChecksWorkerPool(prio, checks, send_queue, stopevent)
-        logger.debug('Starting worker %r ...', worker)
-        worker.start()
-        thread_list.append(worker)
-
-    #pool_barer = PoolBarer(pool_queue, stopevent)
-    #pool_barer.daemon = True
     send_nsca_pool.start()
-    #pool_barer.start()
+    global scheduler
+    scheduler = MassivePassiveScheduler(send_queue)
+    scheduler.add_passive_checks(passive_configs)
+    scheduler.start()
+
+    def config_reload(signum, sigframe):
+        logger.info('Received SIGHUP ... reloading config now ...')
+        global scheduler
+        scheduler.shutdown()
+        scheduler = MassivePassiveScheduler(send_queue)
+        passive_configs = ConfigDir(options.confdir)
+        scheduler.add_passive_checks(passive_configs)
+        scheduler.start()
+        logger.info('Config reload done.')
+
 
     def shutdown(signum, sigframe):
         logger.info('Received SIGTERM ... going down now ...')
         stopevent.set()
+        scheduler.shutdown()
         logger.debug('Stopevent set.')
         for thread in thread_list:
             logger.debug('Joining thread %r ...', thread.name)
@@ -98,6 +100,7 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGHUP, config_reload)
 
     while not stopevent.is_set():
         sleep(0.1)

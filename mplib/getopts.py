@@ -58,7 +58,6 @@ def getopt(usage=None, description=None, version=None, epilog=None):
     options, args = parser.parse_args()
 
     options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
-    print options.loglevel
 
     return options, args
 

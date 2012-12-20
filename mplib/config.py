@@ -18,9 +18,8 @@ import logging
 from glob import iglob
 from UserDict import IterableUserDict
 
-import logging
-
 logger = logging.getLogger(__name__)
+
 class ConfigFile(IterableUserDict):
     def __init__(self, path):
         IterableUserDict.__init__(self)
@@ -40,13 +39,7 @@ class ConfigFile(IterableUserDict):
         self.clear()
         self._initialize()
 
-class ConfigDir(IterableUserDict):
-    def __init__(self, path):
-        IterableUserDict.__init__(self)
-        self.path = os.path.realpath(path)
-        self._initialize()
-
-
+class ConfigDir(ConfigFile):
     def _initialize(self):
         logger = logging.getLogger(
             '%s.%s'
@@ -55,12 +48,9 @@ class ConfigDir(IterableUserDict):
         logger.debug('Initialized with %r.', self.path)
         for config in iglob(os.path.join(self.path, '*.cfg')):
             config = ConfigFile(config)
-            when = self.setdefault(config['time'], list())
+            when = self.setdefault(config['interval'], list())
             when.append(config)
 
-    def reload(self):
-        self.clear()
-        self._initialize()
 
 if __name__ == '__main__':
     pass
