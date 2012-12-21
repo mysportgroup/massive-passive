@@ -4,6 +4,7 @@
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
+__license__ = 'GPL3+'
 __version__ = '0.1.0'
 
 import os
