@@ -62,7 +62,7 @@ if __name__ == '__main__':
     stopevent = multiprocessing.Event()
     thread_list = list()
 
-    send_nsca_pool = SendNscaWorkerPool(2, send_queue, stopevent)
+    send_nsca_pool = SendNscaWorkerPool(10, send_queue, stopevent)
     thread_list.append(send_nsca_pool)
 
     send_nsca_pool.start()
@@ -87,6 +87,9 @@ if __name__ == '__main__':
         stopevent.set()
         scheduler.shutdown()
         logger.debug('Stopevent set.')
+        send_nsca_pool.pool.close()
+        send_nsca_pool.pool.join()
+
         for thread in thread_list:
             logger.debug('Joining thread %r ...', thread.name)
             thread.join()
