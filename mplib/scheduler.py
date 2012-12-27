@@ -28,7 +28,7 @@ class MassivePassiveScheduler(Scheduler):
             for check in checks:
                 self.logger.info(
                     'Adding check %r with time interval %d.',
-                    check.get('name', 'Unnamed'), check.get('interval', 60)
+                    check.path, check.get('interval', 60)
                 )
                 self.add_interval_job(
                     passive_check_cmd,
