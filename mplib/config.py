@@ -54,3 +54,5 @@ class ConfigDir(ConfigFile):
 
 if __name__ == '__main__':
     pass
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

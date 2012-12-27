@@ -8,18 +8,19 @@ __license__ = 'GPL3+'
 __version__ = '0.0.1'
 
 
-import threading
-import multiprocessing
+from time import time
 from Queue import Empty
 from Queue import Queue
 from cmd import send_nsca
-from time import time
+from threading import Thread
+from multiprocessing import Process
+
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-class WorkerJoiner(threading.Thread):
+class WorkerJoiner(Thread):
     def __init__(self, in_queue, stop_event):
         super(WorkerJoiner, self).__init__()
         self.name = self.__class__.__name__ +  self.name
@@ -41,8 +42,9 @@ class WorkerJoiner(threading.Thread):
                 process.join()
                 self.logger.debug('Joined process %r.', process)
 
-class SendNscaWorker(threading.Thread):
-    def __init__(self, in_queue, stop_event, max_wait=1, max_results=10, batch_mode=True):
+
+class SendNscaWorker(Thread):
+    def __init__(self, in_queue, stop_event, max_wait=1, max_results=10, batch_mode=False):
         super(SendNscaWorker, self).__init__()
         self.name = self.__class__.__name__ +  self.name
         self.in_queue = in_queue
@@ -70,6 +72,7 @@ class SendNscaWorker(threading.Thread):
             self.logger.debug('Joining process_joiner thread ...')
             self.process_joiner.join()
             self.logger.debug('Joined process_joiner thread.')
+            self.logger.debug('process.joiner is alive: %r', self.process_joiner.is_alive())
 
     def _get_from_in_queue(self):
         start_time = time()
@@ -77,18 +80,22 @@ class SendNscaWorker(threading.Thread):
         results = list()
 
         while not self.stop_event.is_set():
-            if len(results) >= self.max_results:
-                self.logger.debug('Hitting max_results limit ...')
-                break
+            if self.batch_mode is True:
+                if len(results) >= self.max_results:
+                    self.logger.debug('Hitting max_results limit ...')
+                    break
 
-            if time() > end_time:
-                self.logger.debug('Hitting max_wait limit ...')
-                break
+                if results and time() > end_time:
+                    self.logger.debug('Hitting max_wait limit ...')
+                    break
 
             try:
                 results.append(self.in_queue.get(True, 0.1))
             except Empty:
                 continue
+            else:
+                if self.batch_mode is False:
+                    break
 
         return results
 
@@ -102,7 +109,7 @@ class SendNscaWorker(threading.Thread):
         if self.batch_mode is False:
             for result in results:
                 for ip in result['servers'].itervalues():
-                    process = multiprocessing.Process(
+                    process = Process(
                         target=send_nsca, args=(self._format_result(result), ip)
                     )
                     process.start()
@@ -114,7 +121,7 @@ class SendNscaWorker(threading.Thread):
                     string_list = batch_mapping.setdefault(ip, list())
                     string_list.append(self._format_result(result))
             for ip, string_list in batch_mapping.iteritems():
-                process = multiprocessing.Process(
+                process = Process(
                     target=send_nsca, args=(''.join(string_list), ip)
                 )
                 process.start()
@@ -161,4 +168,4 @@ if __name__ == '__main__':
 
 
 
-    # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

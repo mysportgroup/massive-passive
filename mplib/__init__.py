@@ -10,3 +10,6 @@ __copyright__ = '(c) 2012 by mysportgroup.de'
 if __name__ == '__main__':
     pass
 
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+

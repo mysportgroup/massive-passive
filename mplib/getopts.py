@@ -7,8 +7,6 @@ __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
 __version__ = '0.0.1'
 
-import os
-import sys
 import optparse
 import logging
 
@@ -57,6 +55,22 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         help='The path to the pidfile (if running in Background). Default: %default'
     )
 
+    parser.add_option(
+        '--batch-mode',
+        default=False,
+        action='store_true',
+        help='Use batch mode for sending passive check results? Default: %default'
+    )
+
+    parser.add_option(
+        '--batch-wait-time',
+        default=2,
+        type='int',
+        help='Set the max wait time before sending check results in batch mode. Default: %default',
+
+
+    )
+
     options, args = parser.parse_args()
 
     options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
@@ -91,4 +105,4 @@ if __name__ == '__main__':
 
 
 
-    # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

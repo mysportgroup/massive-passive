@@ -82,3 +82,4 @@ def send_nsca(message, ip, port='5667', timeout='10', delim='\t', config_file='/
 if __name__ == '__main__':
     pass
 
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
