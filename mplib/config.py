@@ -16,7 +16,9 @@ except ImportError:
 
 import logging
 from glob import iglob
+from shlex import split
 from UserDict import IterableUserDict
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +33,50 @@ class ConfigFile(IterableUserDict):
             '%s.%s'
             %(self.__module__, self.__class__.__name__)
         )
+
         logger.debug('Initialized with %r.', self.path)
+
         with open(self.path, 'r', 1) as fp:
-            self.update(json.load(fp))
+            try:
+                config = json.load(fp)
+            except Exception as error:
+                logger.error(
+                    'There where errors during loading content from: %r',
+                    self.path
+                )
+                logger.exception(error)
+                raise
+            else:
+                self._safe_update(config)
+
+    def _safe_update(self, config):
+        must_haves = (
+            'check_description',
+            'interval',
+            'servers',
+            'command',
+            'check_type',
+            'check_hostname'
+        )
+
+        for must_have in must_haves:
+            if not must_have in config:
+                raise KeyError(
+                    'Config at %r has no key %r.' %(self.path, must_have)
+                )
+
+        command = config['command']
+        if isinstance(command, str):
+            config['command'] = split(command)
+        elif not isinstance(command, (list, tuple)):
+            raise TypeError('Command must be one of str, list or tuple')
+
+        self.update(config)
 
     def reload(self):
         self.clear()
         self._initialize()
+
 
 class ConfigDir(ConfigFile):
     def _initialize(self):
@@ -47,9 +86,15 @@ class ConfigDir(ConfigFile):
         )
         logger.debug('Initialized with %r.', self.path)
         for config in iglob(os.path.join(self.path, '*.cfg')):
-            config = ConfigFile(config)
-            when = self.setdefault(config['interval'], list())
-            when.append(config)
+            try:
+                config = ConfigFile(config)
+            except Exception as error:
+                logger.error('There where errors while loading %r. Skipping config.', config)
+                logger.exception(error)
+                continue
+            else:
+                when = self.setdefault(config['interval'], list())
+                when.append(config)
 
 
 if __name__ == '__main__':

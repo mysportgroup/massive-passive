@@ -108,25 +108,30 @@ class SendNscaWorker(Thread):
 
         if self.batch_mode is False:
             for result in results:
-                for ip in result['servers'].itervalues():
+                for socket in result['servers'].itervalues():
+                    socket = socket.split(':', 1)
                     process = Process(
-                        target=send_nsca, args=(self._format_result(result), ip)
+                        target=send_nsca, args=(self._format_result(result), socket)
                     )
                     process.start()
                     workers.append(process)
         else:
             batch_mapping = dict()
             for result in results:
-                for ip in result['servers'].itervalues():
-                    string_list = batch_mapping.setdefault(ip, list())
+                for socket in result['servers'].itervalues():
+                    string_list = batch_mapping.setdefault(socket, list())
                     string_list.append(self._format_result(result))
-            for ip, string_list in batch_mapping.iteritems():
+            for socket, string_list in batch_mapping.iteritems():
+                socket = socket.split(':')
                 process = Process(
-                    target=send_nsca, args=(''.join(string_list), ip)
+                    target=send_nsca, args=(''.join(string_list), socket)
                 )
                 process.start()
                 workers.append(process)
         return workers
+
+    def _raw_format_result(self, result):
+        return result['check_result']['stdout']
 
     def _format_result(self, result, delim='\t'):
         check_type = result['check_type']

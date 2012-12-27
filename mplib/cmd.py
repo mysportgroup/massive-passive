@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
 
     command = check_data.get('command')
-    shell = check_data.get('shell', False)
     env = check_data.get('env', None)
     cwd = check_data.get('cwd', os.getcwd())
     close_fds = check_data.get('close_fds', True)
@@ -30,14 +29,17 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
         close_fds=close_fds,
         env=env,
         cwd=cwd,
-        shell=shell,
+        shell=False,
     )
 
     stdout, stderr = cmd.communicate()
     stdout = stdout.rstrip()
     stderr = stderr.rstrip()
 
-    logger.debug('Command %r returned with %s. stdout was: %r, stderr was: %r', command, cmd.returncode, stdout, stderr)
+    logger.debug(
+        'Command %r returned with %s. stdout was: %r, stderr was: %r',
+        command, cmd.returncode, stdout, stderr
+    )
 
     result = {
         'returncode': cmd.returncode,
@@ -49,11 +51,16 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
     queue.put(check_data)
     return check_data
 
-def send_nsca(message, ip, port='5667', timeout='10', delim='\t', config_file='/etc/send_nsca.cfg' ):
+def send_nsca(message, socket, port='5667', timeout='10', delim='\t', config_file='/etc/send_nsca.cfg' ):
     logger.debug(
-        'Called with parameters: message => %r, ip => %r, port => %r, timeout => %r, delim => %r, config_file => %r',
-        message, ip, port, timeout, delim, config_file
+        'Called with parameters: message => %r, socket => %r, \
+        port => %r, timeout => %r, delim => %r, config_file => %r',
+        message, socket, port, timeout, delim, config_file
     )
+
+    ip = socket[0]
+    if len(socket) > 1:
+        port = socket[1]
 
     cmd = subprocess.Popen(
         [BIN_SEND_NSCA, '-H', ip, '-p', port, '-to', timeout, '-d', delim, '-c', config_file],
