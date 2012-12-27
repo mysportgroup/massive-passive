@@ -39,19 +39,19 @@ def getopt(usage=None, description=None, version=None, epilog=None):
 
     parser.add_option(
         '--confdir',
-        default='/etc/massive_passive/conf.d',
+        default='/etc/massive-passive/checks.d',
         help='The path to the passive check configurations directory. Default: %default'
     )
 
     parser.add_option(
         '--conffile',
-        default='/etc/massive_passive/massive_passive.cfg',
+        default='/etc/massive-passive/massive-passive.cfg',
         help='The path to the massive_passive config file itself. Default: %default'
     )
 
     parser.add_option(
         '--pidfile',
-        default='/tmp/massive_passive.pid',
+        default='/tmp/massive-passive.pid',
         help='The path to the pidfile (if running in Background). Default: %default'
     )
 
