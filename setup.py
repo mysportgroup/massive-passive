@@ -7,7 +7,7 @@ from distutils.core import setup
 
 setup(
         name='massive-passive',
-        version='0.2.1',
+        version='0.2.2',
         description='A scheduler for passive nagios/icinga checks.',
         author='Robin Wittler',
         author_email='r.wittler@mysportgroup.de',
@@ -15,7 +15,7 @@ setup(
         maintainer_email='r.wittler@mysportgroup.de',
         license='GPL3+',
         url='https://github.com/mysportgroup/massive-passive',
-        install_requires=['simplejson', 'apscheduler', 'psutil', 'setproctitle'],
+        install_requires=['simplejson', 'apscheduler', 'setproctitle'],
         packages=['mplib'],
         data_files=[
             ('/usr/sbin', ['massive-passive']),
