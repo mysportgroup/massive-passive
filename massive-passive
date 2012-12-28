@@ -9,8 +9,6 @@ __version__ = '0.2.0'
 
 import os
 import sys
-import pwd
-import grp
 import signal
 import logging
 from time import sleep

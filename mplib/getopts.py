@@ -71,8 +71,6 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         default=2,
         type='int',
         help='Set the max wait time before sending check results in batch mode. Default: %default',
-
-
     )
 
     parser.add_option(
