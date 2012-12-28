@@ -71,7 +71,7 @@ massive-passive side)
 
 interval: this interval is used to execute your checks (in seconds)
 
-servers: you can add as many servers as needed. if the use the default nsca port (port 5667)
+servers: you can add as many servers as needed. if they use the default nsca port (port 5667)
 you can write:
      "hostname": "ipaddress"
 if a different port is needed than you can write:
@@ -82,6 +82,7 @@ You can write it down just like you did it in your shell. You can also make use 
 environment variables (maybe to set some password or other stuff).
 
 env: with env you can set special environment variables for your check.
+The default is: env is empty! (there is no $PATH, $HOME, etc pp)
 
 check_type: There are two different check types: host and service checks.
 
@@ -90,7 +91,15 @@ configured on the nagios/icinga side.
 
 
 After configuring your first check, you can do:
-    kill -1 <PID OF MASSIVE-PASSIVE>
+    kill -1 <PID OF MASSIVE-PASSIVE> 
+
+    or
+
+    /etc/init.d/massive-passive reload
+
+    or (on debian)
+    
+    service massive-passive reload
 to reload the configs at runtime. 
 
 A brief documentation will follow. Thank you and have fun!

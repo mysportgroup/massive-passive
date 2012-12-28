@@ -19,7 +19,7 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
 
     command = check_data.get('command')
     env = check_data.get('env', None)
-    cwd = check_data.get('cwd', os.getcwd())
+    cwd = check_data.get('cwd', '/')
     close_fds = check_data.get('close_fds', True)
 
     cmd = subprocess.Popen(

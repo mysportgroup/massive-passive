@@ -10,7 +10,7 @@ __copyright__ = '(c) 2012 by mysportgroup.de'
 import os
 import sys
 
-def daemonize(pidfile, cwd='/'):
+def daemonize(cwd='/'):
 
     try:
         pid = os.fork()
@@ -35,16 +35,16 @@ def daemonize(pidfile, cwd='/'):
         sys.exit(1)
 
 
-    pid = os.getpid()
-    pidfile_fd = os.open(
-        pidfile,
-        os.O_CREAT | os.O_EXCL | os.O_RDWR,
-        0640
-    )
-    pidfile = os.fdopen(pidfile_fd, 'w+')
-    pidfile.write('%s\n' %(pid,))
-    pidfile.flush()
-    os.close(pidfile_fd)
+#    pid = os.getpid()
+#    pidfile_fd = os.open(
+#        pidfile,
+#        os.O_CREAT | os.O_EXCL | os.O_RDWR,
+#        0640
+#    )
+#    pidfile = os.fdopen(pidfile_fd, 'w+')
+#    pidfile.write('%s\n' %(pid,))
+#    pidfile.flush()
+#    os.close(pidfile_fd)
 
     stdin = open('/dev/null', 'r')
     stdout = open('/dev/null', 'a+')

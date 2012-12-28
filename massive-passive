@@ -17,6 +17,7 @@ from mplib import getopts
 from threading import Event
 from mplib.config import ConfigDir
 from mplib.daemon import daemonize
+from setproctitle import setproctitle
 from mplib.threads import SendNscaWorker
 from logging.handlers import SysLogHandler
 from mplib.scheduler import MassivePassiveScheduler
@@ -54,15 +55,33 @@ class Main(object):
         self.scheduler = self._scheduler(self.send_queue)
 
     def run(self):
-        if self.options.foreground is False:
-            self.daemonize()
-        self.logger.info('Startup!')
+        self.set_proc_title()
         self.drop_rights()
+        if self.options.foreground is False:
+            self.write_pidfile()
+        self.logger.info('Startup!')
         self.start_send_worker()
         self.add_jobs_to_scheduler()
         self.start_scheduler()
         while not self.stop_event.is_set():
             sleep(0.1)
+
+    def set_proc_title(self):
+        setproctitle(
+            '%s %s' %(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))
+        )
+
+    def write_pidfile(self):
+        pid = os.getpid()
+        pidfile_fd = os.open(
+            self.options.pidfile,
+            os.O_CREAT | os.O_EXCL | os.O_RDWR,
+            0640
+        )
+        pidfile = os.fdopen(pidfile_fd, 'w+')
+        pidfile.write('%s\n' %(pid,))
+        pidfile.flush()
+        os.close(pidfile_fd)
 
     def drop_rights(self):
         current_uid = os.getuid()
@@ -115,9 +134,6 @@ class Main(object):
             self.logger.debug('send_worker joined.')
         self.logger.debug('send_worker is alive: %r', self.send_worker.is_alive())
 
-    def daemonize(self):
-        daemonize(self.options.pidfile, os.getcwd())
-
     def get_check_configs(self):
         configs = ConfigDir(self.options.confdir)
         self.logger.debug('Get this from confdir %r: %r', self.options.confdir, configs)
@@ -144,6 +160,7 @@ class Main(object):
             try:
                 os.unlink(self.options.pidfile)
             except OSError as error:
+                self.logger.debug('Ignoring error while unlinking pidfile.')
                 self.logger.exception(error)
         self.logger.info('Exiting now!')
 
@@ -156,6 +173,10 @@ if __name__ == '__main__':
 
     logging.basicConfig(level=options.loglevel, format=BASE_FORMAT_STDOUT)
     root_logger = logging.getLogger('')
+
+    if options.foreground is False:
+        daemonize(cwd='/')
+
     root_logger.setLevel(options.loglevel)
     syslog_logger = SysLogHandler('/dev/log', facility=SysLogHandler.LOG_CRON)
     syslog_logger.setLevel(options.loglevel)
