@@ -13,7 +13,6 @@ from Queue import Empty
 from Queue import Queue
 from cmd import send_nsca
 from threading import Thread
-from multiprocessing import Process
 
 
 import logging
@@ -41,6 +40,26 @@ class WorkerJoiner(Thread):
                 self.logger.debug('Joining process %r ...', process)
                 process.join()
                 self.logger.debug('Joined process %r.', process)
+
+
+class SendNscaExecutor(Thread):
+    def __init__(self, socket, message):
+        super(SendNscaExecutor, self).__init__()
+        self.name = self.__class__.__name__ + self.name
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__module__, self.name)
+        )
+
+        self.socket = socket
+        self.message = message
+        self.excetued = False
+
+    def run(self):
+        self.logger.debug('Executing %r with socket %r and message %r.', send_nsca, self.socket, self.message)
+        returncode, message, stdout, stderr = send_nsca(self.message, self.socket)
+        self.logger.debug('send_nsca returned with %r, stdout was %r, stderr was %r.', returncode, stdout, stderr)
+        self.excetued =True
 
 
 class SendNscaWorker(Thread):
@@ -110,9 +129,7 @@ class SendNscaWorker(Thread):
             for result in results:
                 for socket in result['servers'].itervalues():
                     socket = socket.split(':', 1)
-                    process = Process(
-                        target=send_nsca, args=(self._format_result(result), socket)
-                    )
+                    process = SendNscaExecutor(socket, self._format_result(result))
                     process.start()
                     workers.append(process)
         else:
@@ -123,9 +140,7 @@ class SendNscaWorker(Thread):
                     string_list.append(self._format_result(result))
             for socket, string_list in batch_mapping.iteritems():
                 socket = socket.split(':')
-                process = Process(
-                    target=send_nsca, args=(''.join(string_list), socket)
-                )
+                process = SendNscaExecutor(socket, ''.join(string_list))
                 process.start()
                 workers.append(process)
         return workers
