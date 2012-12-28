@@ -7,8 +7,12 @@ __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
 __version__ = '0.0.1'
 
+import os
+import pwd
+import grp
 import optparse
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +75,25 @@ def getopt(usage=None, description=None, version=None, epilog=None):
 
     )
 
+    parser.add_option(
+        '-u',
+        '--user',
+        default=pwd.getpwuid(os.getuid()).pw_name,
+        help='The username who should execute this process. Default: %default'
+    )
+
+    parser.add_option(
+        '-g',
+        '--group',
+        default=grp.getgrgid(os.getgid()).gr_name,
+        help='The groupname this process runs at. Default: %default'
+    )
+
     options, args = parser.parse_args()
 
     options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
+    options.user = pwd.getpwnam(options.user).pw_uid
+    options.group = grp.getgrnam(options.group).gr_gid
 
     return options, args
 

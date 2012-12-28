@@ -9,6 +9,8 @@ __version__ = '0.2.0'
 
 import os
 import sys
+import pwd
+import grp
 import signal
 import logging
 from time import sleep
@@ -57,14 +59,34 @@ class Main(object):
         if self.options.foreground is False:
             self.daemonize()
         self.logger.info('Startup!')
+        self.drop_rights()
         self.start_send_worker()
         self.add_jobs_to_scheduler()
         self.start_scheduler()
         while not self.stop_event.is_set():
             sleep(0.1)
 
+    def drop_rights(self):
+        current_uid = os.getuid()
+        current_gid = os.getgid()
+
+        if not options.group == current_gid:
+            self.logger.debug('Switching group to %r', options.group)
+            os.setgid(options.group)
+            os.setegid(options.group)
+
+        if not options.user == current_uid:
+            self.logger.debug('Switching user to %r', options.user)
+            os.setuid(options.user)
+            os.seteuid(options.user)
+
     def start(self):
-        self.run()
+        try:
+            self.run()
+        except Exception as error:
+            self.logger.exception(error)
+            self.logger.info('Emitting stop signal ...')
+            os.kill(os.getpid(), signal.SIGTERM)
 
     def start_scheduler(self):
         self.logger.debug('Calling scheduler start ...')
@@ -82,15 +104,17 @@ class Main(object):
         self.logger.debug('send_worker is alive: %r', self.send_worker.is_alive())
 
     def stop_scheduler(self):
-        self.logger.debug('Calling scheduler shutdown ...')
-        self.scheduler.shutdown()
-        self.logger.debug('Scheduler shutdown done.')
+        if self.scheduler.running:
+            self.logger.debug('Calling scheduler shutdown ...')
+            self.scheduler.shutdown()
+            self.logger.debug('Scheduler shutdown done.')
         self.logger.debug('Scheduler is running: %r.', self.scheduler.running)
 
     def stop_send_worker(self):
-        self.logger.debug('Calling send_worker thread join ...')
-        self.send_worker.join()
-        self.logger.debug('send_worker joined.')
+        if self.send_worker.is_alive():
+            self.logger.debug('Calling send_worker thread join ...')
+            self.send_worker.join()
+            self.logger.debug('send_worker joined.')
         self.logger.debug('send_worker is alive: %r', self.send_worker.is_alive())
 
     def daemonize(self):
