@@ -1,0 +1,5 @@
+massive-passive (0.2.4-1) stable; urgency=low
+
+  * initial debian package
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 02 Jan 2013 10:51:56 +0100

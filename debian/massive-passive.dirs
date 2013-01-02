@@ -1,0 +1,2 @@
+etc/massive-passive/checks.d
+var/run/massive-passive
