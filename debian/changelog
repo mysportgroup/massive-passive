@@ -1,3 +1,9 @@
+massive-passive (0.2.4-3) stable; urgency=low
+
+  * add nsca dependency, add nagios plugins suggestions
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 03 Jan 2013 11:17:36 +0100
+
 massive-passive (0.2.4-2) stable; urgency=low
 
   * fix missing nagios user at adduser command
