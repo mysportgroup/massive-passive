@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 import os
 import pwd
@@ -85,6 +85,19 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         '--group',
         default=grp.getgrgid(os.getgid()).gr_name,
         help='The groupname this process runs at. Default: %default'
+    )
+
+    parser.add_option(
+        '--initial-random-wait-range',
+        default=10,
+        type='int',
+        help=(
+            'The seconds to random wait before the scheduler executes the jobs the first time. ' +
+            'This only applies when starting or reloading the scheduler. The wait range goes from: ' +
+            '0 to WAIT_RANGE. If set to 0, there is no range and every check will be initially scheduled ' +
+            'immediately (which can produce some load). Default: 0 - %default'
+        ),
+        metavar='WAIT_RANGE'
     )
 
     options, args = parser.parse_args()

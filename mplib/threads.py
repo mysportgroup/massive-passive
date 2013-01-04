@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 from time import time
@@ -56,9 +56,29 @@ class SendNscaExecutor(Thread):
         self.excetued = False
 
     def run(self):
-        self.logger.debug('Executing %r with socket %r and message %r.', send_nsca, self.socket, self.message)
-        returncode, message, stdout, stderr = send_nsca(self.message, self.socket)
-        self.logger.debug('send_nsca returned with %r, stdout was %r, stderr was %r.', returncode, stdout, stderr)
+        self.logger.debug(
+            'Executing %r with socket %r and message %r.',
+            send_nsca,
+            self.socket,
+            self.message
+        )
+
+        returncode, message, stdout, stderr = send_nsca(
+            self.message,
+            self.socket
+        )
+
+        self.logger.info(
+            'send_nsca job to %r was not successful.', self.socket
+        )
+
+        self.logger.debug(
+            'send_nsca to %r returned with %r, stdout was %r, stderr was %r.',
+            self.socket,
+            returncode,
+            stdout,
+            stderr
+        )
         self.excetued =True
 
 
@@ -77,9 +97,9 @@ class SendNscaWorker(Thread):
             %(self.__module__, self.name)
         )
         self.process_joiner = WorkerJoiner(self.out_queue, self.stop_event)
-        self.logger.debug('Starting process_joiner thread ...')
+        self.logger.debug('Starting %r thread ...', self.process_joiner.name)
         self.process_joiner.start()
-        self.logger.debug('process_joiner thread started.')
+        self.logger.debug('%r thread started.', self.process_joiner.name)
 
 
     def run(self):
@@ -88,10 +108,21 @@ class SendNscaWorker(Thread):
             workers = self._build_workers(results)
             self._put_into_out_queue(workers)
         else:
-            self.logger.debug('Joining process_joiner thread ...')
+            self.logger.debug(
+                'Joining %r thread ...', self.process_joiner.name
+            )
+
             self.process_joiner.join()
-            self.logger.debug('Joined process_joiner thread.')
-            self.logger.debug('process.joiner is alive: %r', self.process_joiner.is_alive())
+
+            self.logger.debug(
+                'Joined %r thread.', self.process_joiner.name
+            )
+
+            self.logger.debug(
+                '%r is alive: %r',
+                self.process_joiner.name,
+                self.process_joiner.is_alive()
+            )
 
     def _get_from_in_queue(self):
         start_time = time()
@@ -129,7 +160,10 @@ class SendNscaWorker(Thread):
             for result in results:
                 for socket in result['servers'].itervalues():
                     socket = socket.split(':', 1)
-                    process = SendNscaExecutor(socket, self._format_result(result))
+                    process = SendNscaExecutor(
+                        socket,
+                        self._format_result(result)
+                    )
                     process.start()
                     workers.append(process)
         else:
@@ -157,7 +191,9 @@ class SendNscaWorker(Thread):
         if check_type == 'host_check':
             #Host Checks Format:
             #<host>\t<return_code>\t<plugin_output>\n
-            return '%s%s%s%s%s\n' %(check_hostname, delim, check_returncode, delim, check_msg)
+            return '%s%s%s%s%s\n' %(
+                check_hostname, delim, check_returncode, delim, check_msg
+            )
 
         if check_type == 'service_check':
             #Service Checks Format:
@@ -172,14 +208,6 @@ class SendNscaWorker(Thread):
                 delim,
                 check_msg
             )
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

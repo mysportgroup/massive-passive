@@ -5,14 +5,19 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 import logging
+from time import time
+from random import randint
+from datetime import datetime
 from mplib.cmd import passive_check_cmd
 from apscheduler.scheduler import Scheduler
 
+
 logger = logging.getLogger(__name__)
+
 
 class MassivePassiveScheduler(Scheduler):
     def __init__(self, queue):
@@ -35,7 +40,20 @@ class MassivePassiveScheduler(Scheduler):
                     seconds=interval,
                     args=(check, self.queue)
                 )
-
+    def schedule_passive_checks_initially(self, checks_config, wait_range=10):
+        for checks in checks_config.itervalues():
+            for check in checks:
+                date = datetime.fromtimestamp(time() + randint(0, wait_range))
+                self.logger.info(
+                    'Check %r will be initially executed at %s.',
+                    check,
+                    date
+                )
+                self.add_date_job(
+                    passive_check_cmd,
+                    date=date,
+                    args=(check, self.queue)
+                )
 
 
 if __name__ == '__main__':
