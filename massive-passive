@@ -19,7 +19,7 @@ from mplib.config import ConfigDir
 from mplib.daemon import daemonize
 from setproctitle import setproctitle
 from mplib.threads import SendNscaWorker
-from logging.handlers import SysLogHandler
+from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
 
 
@@ -49,7 +49,8 @@ class Main(object):
             self.send_queue,
             self.stop_event,
             max_wait=self.options.batch_wait_time,
-            batch_mode=self.options.batch_mode
+            batch_mode=self.options.batch_mode,
+            max_results=self.options.batch_max_items,
         )
         self._scheduler = scheduler
         self.scheduler = self._scheduler(self.send_queue)
@@ -199,12 +200,12 @@ if __name__ == '__main__':
 
     if options.foreground is False:
         daemonize(cwd='/')
-        syslog_logger = SysLogHandler('/dev/log', facility=SysLogHandler.LOG_CRON)
-        syslog_logger.setLevel(options.loglevel)
-        syslog_formatter = logging.Formatter(BASE_FORMAT_SYSLOG)
-        syslog_logger.setFormatter(syslog_formatter)
-        root_logger.addHandler(syslog_logger)
 
+    filehandler = WatchedFileHandler(options.logfile)
+    filehandler.setLevel(options.loglevel)
+    filehandler_formatter = logging.Formatter(BASE_FORMAT_STDOUT)
+    filehandler.setFormatter(filehandler_formatter)
+    root_logger.addHandler(filehandler)
     root_logger.setLevel(options.loglevel)
     main = Main(sys.argv[0], options, SendNscaWorker, MassivePassiveScheduler)
     signal.signal(signal.SIGTERM, main.shutdown)

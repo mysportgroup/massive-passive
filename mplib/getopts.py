@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 import os
 import pwd
@@ -47,11 +47,12 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         help='The path to the passive check configurations directory. Default: %default'
     )
 
-    parser.add_option(
-        '--conffile',
-        default='/etc/massive-passive/massive-passive.cfg',
-        help='The path to the massive_passive config file itself. Default: %default'
-    )
+    # removed this option - follows later
+    #parser.add_option(
+    #    '--conffile',
+    #    default='/etc/massive-passive/massive-passive.cfg',
+     #   help='The path to the massive_passive config file itself. Default: %default'
+    #)
 
     parser.add_option(
         '--pidfile',
@@ -74,6 +75,16 @@ def getopt(usage=None, description=None, version=None, epilog=None):
     )
 
     parser.add_option(
+        '--batch-max-items',
+        default=10,
+        type='int',
+        help=(
+            'How much items to use in batch mode. ' +
+            'A value of 0 means unlimited items. Default: %default'
+        )
+    )
+
+    parser.add_option(
         '-u',
         '--user',
         default=pwd.getpwuid(os.getuid()).pw_name,
@@ -92,12 +103,18 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         default=10,
         type='int',
         help=(
-            'The seconds to random wait before the scheduler executes the jobs the first time. ' +
-            'This only applies when starting or reloading the scheduler. The wait range goes from: ' +
-            '0 to WAIT_RANGE. If set to 0, there is no range and every check will be initially scheduled ' +
-            'immediately (which can produce some load). Default: 0 - %default'
-        ),
-        metavar='WAIT_RANGE'
+            'The seconds to random wait before the scheduler executes the ' +
+            'jobs the first time. This only applies when starting or reloading ' +
+            'the scheduler. The wait range goes from: 0 to INITIAL_RANDOM_WAIT_RANGE. ' +
+            'If set to 0, there is no range and every check will be initially scheduled ' +
+            'immediately (which can produce some load). Default: %default'
+        )
+    )
+
+    parser.add_option(
+        '--logfile',
+        default='/tmp/massive-passive.log',
+        help='The path to the logfile. Default: %default'
     )
 
     options, args = parser.parse_args()

@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 from time import time
@@ -131,7 +131,7 @@ class SendNscaWorker(Thread):
 
         while not self.stop_event.is_set():
             if self.batch_mode is True:
-                if len(results) >= self.max_results:
+                if self.max_results and (len(results) >= self.max_results):
                     self.logger.debug('Hitting max_results limit ...')
                     break
 
@@ -156,7 +156,11 @@ class SendNscaWorker(Thread):
     def _build_workers(self, results):
         workers = list()
 
+
         if self.batch_mode is False:
+            self.logger.debug(
+                'Sending %s results in single mode.', len(results)
+            )
             for result in results:
                 for socket in result['servers'].itervalues():
                     socket = socket.split(':', 1)
@@ -167,6 +171,9 @@ class SendNscaWorker(Thread):
                     process.start()
                     workers.append(process)
         else:
+            self.logger.debug(
+                'Sending %s results in batch mode.', len(results)
+            )
             batch_mapping = dict()
             for result in results:
                 for socket in result['servers'].itervalues():
