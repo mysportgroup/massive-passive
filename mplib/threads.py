@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 from time import time
@@ -43,7 +43,7 @@ class WorkerJoiner(Thread):
 
 
 class SendNscaExecutor(Thread):
-    def __init__(self, socket, message):
+    def __init__(self, socket, message, path_to_send_nsca):
         super(SendNscaExecutor, self).__init__()
         self.name = self.__class__.__name__ + self.name
         self.logger = logging.getLogger(
@@ -54,18 +54,20 @@ class SendNscaExecutor(Thread):
         self.socket = socket
         self.message = message
         self.excetued = False
+        self.path_to_send_nsca = path_to_send_nsca
 
     def run(self):
         self.logger.debug(
             'Executing %r with socket %r and message %r.',
-            send_nsca,
+            self.path_to_send_nsca,
             self.socket,
             self.message
         )
 
         returncode, message, stdout, stderr = send_nsca(
             self.message,
-            self.socket
+            self.socket,
+            path_to_send_nsca=self.path_to_send_nsca
         )
 
         self.logger.info(
@@ -83,7 +85,7 @@ class SendNscaExecutor(Thread):
 
 
 class SendNscaWorker(Thread):
-    def __init__(self, in_queue, stop_event, max_wait=1, max_results=10, batch_mode=False):
+    def __init__(self, in_queue, stop_event, max_wait=1, max_results=10, batch_mode=False, path_to_send_nsca='/usr/sbin/send_nsca'):
         super(SendNscaWorker, self).__init__()
         self.name = self.__class__.__name__ +  self.name
         self.in_queue = in_queue
@@ -92,6 +94,7 @@ class SendNscaWorker(Thread):
         self.max_wait = max_wait
         self.max_results = max_results
         self.batch_mode = batch_mode
+        self.path_to_send_nsca = path_to_send_nsca
         self.logger = logging.getLogger(
             '%s.%s'
             %(self.__module__, self.name)
@@ -166,7 +169,8 @@ class SendNscaWorker(Thread):
                     socket = socket.split(':', 1)
                     process = SendNscaExecutor(
                         socket,
-                        self._format_result(result)
+                        self._format_result(result),
+                        self.path_to_send_nsca
                     )
                     process.start()
                     workers.append(process)
@@ -181,7 +185,7 @@ class SendNscaWorker(Thread):
                     string_list.append(self._format_result(result))
             for socket, string_list in batch_mapping.iteritems():
                 socket = socket.split(':')
-                process = SendNscaExecutor(socket, ''.join(string_list))
+                process = SendNscaExecutor(socket, ''.join(string_list), self.path_to_send_nsca)
                 process.start()
                 workers.append(process)
         return workers

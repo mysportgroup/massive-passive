@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 import logging
@@ -38,12 +38,18 @@ class MassivePassiveScheduler(Scheduler):
                 self.add_interval_job(
                     passive_check_cmd,
                     seconds=interval,
+                    max_instances=check.get('max_instances', 1),
                     args=(check, self.queue)
                 )
-    def schedule_passive_checks_initially(self, checks_config, wait_range=10):
+    def schedule_passive_checks_initially(self, checks_config, wait_range_start=2 , wait_range_end=10):
         for checks in checks_config.itervalues():
             for check in checks:
-                date = datetime.fromtimestamp(time() + randint(0, wait_range))
+                date = datetime.fromtimestamp(
+                    time() + randint(
+                        wait_range_start,
+                        wait_range_end if wait_range_end else wait_range_start
+                    )
+                )
                 self.logger.info(
                     'Check %r will be initially executed at %s.',
                     check,

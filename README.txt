@@ -22,8 +22,21 @@ You can also just use every existing normal nagios/icinga host and service
 check (if written with the standard rules for nagios/icinga checks in mind)
 and execute it via massive-passive. The result of a check will be translated
 in the correct nsca format and send to (maybe multiple) nagios/icinga hosts.
-And if you want, this will be done in batch mode. So you could send 5 results
-in one nsca connection.
+And if you want, this will be done in batch mode. So you could send e.g.
+5 results in one nsca connection.
+
+Also you don't have to deal with lock files. Imagine you have a long running
+check - and the execution Time is somewhat a moving target. But the check must
+run as a single instance and not multiple instance at the same time.
+Normally you extend your passive check with a lock file function or other
+mechanism, to ensure that it only runs once a time. With massive-passive you
+don't have to do this. The apscheduler (thanks to Alex Grönholm) behind
+massive-passive ensures it on it's own. But - if you want several running
+instances of your check, you can do that, too. Just configure your check
+with the "max_instances" parameter with a value greater then 1 and it's done.
+
+So just configure your nagios/icinga check and have fun!
+
 
 
 How?
@@ -32,6 +45,9 @@ How?
 Get the source from github (https://github.com/mysportgroup/massive-passive).
 Make sure you have python and python setuptools installed.
 Do:
+
+    Configure your nsca daemon and send_nsca client.
+
     cd /path/to/massive-passive-source
     python setup.py install
 
@@ -62,7 +78,8 @@ But for a better understanding we take a closer look at them.
     "command": "/bin/bash -c '/bin/echo hello this is an environment test: $TESTERTEST'",
     "env": {"TESTERTEST": "moep!"},
     "check_type": "service_check",
-    "check_hostname": "this.is.a.hostname"
+    "check_hostname": "this.is.a.hostname",
+    "max_instances": 3
 }
 
 check_description: This is the check description also used on side of the nagios/icinga server.
@@ -89,6 +106,8 @@ check_type: There are two different check types: host and service checks.
 check_hostname: The hostname for this check. Must be equal with the hostname
 configured on the nagios/icinga side.
 
+max_instances: The maximum of running instances of a check at the same time. (default 1)
+
 
 After configuring your first check, you can do:
     kill -1 <PID OF MASSIVE-PASSIVE> 
@@ -101,6 +120,64 @@ After configuring your first check, you can do:
     
     service massive-passive reload
 to reload the configs at runtime. 
+
+
+
+All command line options for starting massive-passive:
+------------------------------------------------------
+
+Usage: massive-passive [options]
+
+massive_passive is a tool for scheduling passive nagios/icinga checks.
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -f, --foreground      Do not run in Background. Default: False
+  -l LOGLEVEL, --loglevel=LOGLEVEL
+                        The loglevel to use. Default: INFO
+  --confdir=CONFDIR     The path to the passive check configurations
+                        directory. Default: /etc/massive-passive/checks.d
+  --pidfile=PIDFILE     The path to the pidfile (if running in Background).
+                        Default: /tmp/massive-passive.pid
+  --batch-mode          Use batch mode for sending passive check results?
+                        Default: False
+  --batch-wait-time=BATCH_WAIT_TIME
+                        Set the max wait time before sending check results in
+                        batch mode. Default: 2
+  --batch-max-items=BATCH_MAX_ITEMS
+                        How much items to use in batch mode. A value of 0
+                        means unlimited items. Default: 10
+  -u USER, --user=USER  The username who should execute this process. Default:
+                        real
+  -g GROUP, --group=GROUP
+                        The groupname this process runs at. Default: real
+  --initial-random-wait-range=INITIAL_RANDOM_WAIT_RANGE
+                        The seconds to random wait before the scheduler
+                        executes the jobs the first time. This only applies
+                        when starting or reloading the scheduler. The wait
+                        range goes from: 2 to INITIAL_RANDOM_WAIT_RANGE. If
+                        set to 0, there is no range and every check will be
+                        initially scheduled after 2 seconds (which can produce
+                        some load). Default: 10
+  --logfile=LOGFILE     The path to the logfile. Default: /tmp/massive-
+                        passive.log
+  --path-to-send-nsca=PATH_TO_SEND_NSCA
+                        The path to the send_nsca binary. Default:
+                        /usr/sbin/send_nsca
+
+author: Robin Wittler <r.wittler@mysportgroup.de>  Copyright (C) 2012 by
+mysportgroup.de  This program is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.  This program is distributed in the hope that it
+will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+Public License for more details.  You should have received a copy of the GNU
+General Public License along with this program.  If not, see
+<http://www.gnu.org/licenses/>.
+
+
 
 A brief documentation will follow. Thank you and have fun!
 

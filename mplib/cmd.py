@@ -4,7 +4,7 @@
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __copyright__ = '(c) 2012 by mysportgroup.de'
 
 import logging
@@ -51,11 +51,15 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
     queue.put(check_data)
     return check_data
 
-def send_nsca(message, socket, port='5667', timeout='10', delim='\t', config_file='/etc/send_nsca.cfg' ):
+def send_nsca(message, socket, port='5667', timeout='10', delim='\t',
+              config_file='/etc/send_nsca.cfg', path_to_send_nsca=BIN_SEND_NSCA):
     logger.debug(
-        'Called with parameters: message => %r, socket => %r, \
-        port => %r, timeout => %r, delim => %r, config_file => %r',
-        message, socket, port, timeout, delim, config_file
+        (
+            'Called with parameters: message => %r, socket => %r, '
+            'port => %r, timeout => %r, delim => %r, config_file => %r, '
+            'path_to_send_nsca => %r'
+        ),
+        message, socket, port, timeout, delim, config_file, path_to_send_nsca
     )
 
     ip = socket[0]
@@ -63,7 +67,7 @@ def send_nsca(message, socket, port='5667', timeout='10', delim='\t', config_fil
         port = socket[1]
 
     cmd = subprocess.Popen(
-        [BIN_SEND_NSCA, '-H', ip, '-p', port, '-to', timeout, '-d', delim, '-c', config_file],
+        [path_to_send_nsca, '-H', ip, '-p', port, '-to', timeout, '-d', delim, '-c', config_file],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

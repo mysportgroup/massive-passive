@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.2.5'
+__version__ = '0.2.6'
 
 import os
 import sys
@@ -51,6 +51,7 @@ class Main(object):
             max_wait=self.options.batch_wait_time,
             batch_mode=self.options.batch_mode,
             max_results=self.options.batch_max_items,
+            path_to_send_nsca=self.options.path_to_send_nsca
         )
         self._scheduler = scheduler
         self.scheduler = self._scheduler(self.send_queue)
@@ -62,8 +63,8 @@ class Main(object):
             self.write_pidfile()
         self.logger.info('Startup!')
         self.start_send_worker()
-        self.add_jobs_to_scheduler()
         self.start_scheduler()
+        self.add_jobs_to_scheduler()
         while not self.stop_event.is_set():
             sleep(0.1)
 
@@ -116,7 +117,7 @@ class Main(object):
         configs = self.get_check_configs()
         self.scheduler.schedule_passive_checks_initially(
             configs,
-            options.initial_random_wait_range
+            wait_range_end=self.options.initial_random_wait_range
         )
         self.scheduler.add_passive_checks(configs)
 

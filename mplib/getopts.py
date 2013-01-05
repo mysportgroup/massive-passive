@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 import os
 import pwd
@@ -105,9 +105,9 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         help=(
             'The seconds to random wait before the scheduler executes the ' +
             'jobs the first time. This only applies when starting or reloading ' +
-            'the scheduler. The wait range goes from: 0 to INITIAL_RANDOM_WAIT_RANGE. ' +
+            'the scheduler. The wait range goes from: 2 to INITIAL_RANDOM_WAIT_RANGE. ' +
             'If set to 0, there is no range and every check will be initially scheduled ' +
-            'immediately (which can produce some load). Default: %default'
+            'after 2 seconds (which can produce some load). Default: %default'
         )
     )
 
@@ -115,6 +115,12 @@ def getopt(usage=None, description=None, version=None, epilog=None):
         '--logfile',
         default='/tmp/massive-passive.log',
         help='The path to the logfile. Default: %default'
+    )
+
+    parser.add_option(
+        '--path-to-send-nsca',
+        default='/usr/sbin/send_nsca',
+        help='The path to the send_nsca binary. Default: %default'
     )
 
     options, args = parser.parse_args()
