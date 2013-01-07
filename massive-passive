@@ -18,17 +18,10 @@ from threading import Event
 from mplib.config import ConfigDir
 from mplib.daemon import daemonize
 from setproctitle import setproctitle
+from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNscaWorker
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
-
-
-BASE_FORMAT_SYSLOG = (
-    '%(name)s.%(funcName)s[PID: %(process)d | lineno: %(lineno)d] ' +
-    '%(levelname)s: %(message)s'
-)
-
-BASE_FORMAT_STDOUT = '%(asctime)s ' + BASE_FORMAT_SYSLOG
 
 
 class Main(object):
