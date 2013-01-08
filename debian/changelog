@@ -1,0 +1,24 @@
+massive-passive (0.2.6-1) stable; urgency=low
+
+  * new upstream version
+  * change default logfile path
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Mon, 07 Jan 2013 14:03:20 +0100
+
+massive-passive (0.2.4-3) stable; urgency=low
+
+  * add nsca dependency, add nagios plugins suggestions
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 03 Jan 2013 11:17:36 +0100
+
+massive-passive (0.2.4-2) stable; urgency=low
+
+  * fix missing nagios user at adduser command
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 02 Jan 2013 19:58:45 +0100
+
+massive-passive (0.2.4-1) stable; urgency=low
+
+  * initial debian package
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 02 Jan 2013 10:51:56 +0100

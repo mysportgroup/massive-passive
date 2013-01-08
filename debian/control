@@ -1,0 +1,35 @@
+Source: massive-passive
+Maintainer: Robin Wittler <r.wittler@mysportgroup.de>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 7)
+Vcs-git: git://github.com/mysportgroup/massive-passive.git
+Vcs-Browser: https://github.com/mysportgroup/massive-passive
+Standards-Version: 3.9.1
+
+Package: massive-passive
+Architecture: all
+Depends: ${python:Depends}, python-massive-passive (=${source:Version}), adduser, nsca
+Suggests: nagios-plugins-basic, nagios-plugins-standard, nagios-plugins
+Description: A scheduler for passive nagios/icinga checks.
+ A scheduler for passive nagios/icinga checks.
+ massive-passive is a simple scheduler for passive nagios/icinga checks.
+ At the moment it uses send_nsca for sending data to nagios/icinga (other 
+ methods are planned, like stuff from mod_gearman (send_gearman?), a own
+ listener and maybe even delivery via cgi (if someone needs this).
+ .
+ This is the binary package for massive-passive
+
+Package: python-massive-passive
+Architecture: all
+Depends: ${python:Depends}, python-apscheduler, python-setproctitle
+Recommends: python-simplejson
+Provides: ${python:Provides}
+Description: A scheduler for passive nagios/icinga checks.
+ A scheduler for passive nagios/icinga checks.
+ massive-passive is a simple scheduler for passive nagios/icinga checks.
+ At the moment it uses send_nsca for sending data to nagios/icinga (other 
+ methods are planned, like stuff from mod_gearman (send_gearman?), a own
+ listener and maybe even delivery via cgi (if someone needs this).
+ .
+ This is the library package for massive-passive
