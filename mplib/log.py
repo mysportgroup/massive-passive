@@ -8,6 +8,9 @@ __copyright__ = '(c) 2013 by mysportgroup.de'
 
 import os
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 BASE_FORMAT_SYSLOG = (
     '%(name)s.%(funcName)s[PID: %(process)d | lineno: %(lineno)d] ' +
@@ -16,6 +19,9 @@ BASE_FORMAT_SYSLOG = (
 
 BASE_FORMAT_STDOUT = '%(asctime)s ' + BASE_FORMAT_SYSLOG
 
+def set_logfile_permissions(path):
+    os.chown(path, os.getuid(), os.getgid())
+    os.chmod(path, 0660)
 
 
 

@@ -39,6 +39,7 @@ class MassivePassiveScheduler(Scheduler):
                     passive_check_cmd,
                     seconds=interval,
                     max_instances=check.get('max_instances', 1),
+                    misfire_grace_time=check.get('misfire_grace_time', 2),
                     args=(check, self.queue)
                 )
     def schedule_passive_checks_initially(self, checks_config, wait_range_start=2 , wait_range_end=10):

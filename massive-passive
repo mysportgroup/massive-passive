@@ -20,6 +20,7 @@ from mplib.daemon import daemonize
 from setproctitle import setproctitle
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNscaWorker
+from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
 
@@ -195,13 +196,17 @@ if __name__ == '__main__':
     if options.foreground is False:
         daemonize(cwd='/')
 
+    main = Main(sys.argv[0], options, SendNscaWorker, MassivePassiveScheduler)
+    main.drop_rights()
+
     filehandler = WatchedFileHandler(options.logfile)
     filehandler.setLevel(options.loglevel)
     filehandler_formatter = logging.Formatter(BASE_FORMAT_STDOUT)
     filehandler.setFormatter(filehandler_formatter)
     root_logger.addHandler(filehandler)
     root_logger.setLevel(options.loglevel)
-    main = Main(sys.argv[0], options, SendNscaWorker, MassivePassiveScheduler)
+    set_logfile_permissions(options.logfile)
+
     signal.signal(signal.SIGTERM, main.shutdown)
     signal.signal(signal.SIGINT, main.shutdown)
     signal.signal(signal.SIGHUP, main.config_reload)

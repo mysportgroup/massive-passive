@@ -70,9 +70,14 @@ class SendNscaExecutor(Thread):
             path_to_send_nsca=self.path_to_send_nsca
         )
 
-        self.logger.info(
-            'send_nsca job to %r was not successful.', self.socket
-        )
+        if returncode:
+            self.logger.info(
+                'send_nsca job to %r was not successful.', self.socket
+            )
+        else:
+            self.logger.info(
+                'send_nsca job to %r was successful.', self.socket
+            )
 
         self.logger.debug(
             'send_nsca to %r returned with %r, stdout was %r, stderr was %r.',
