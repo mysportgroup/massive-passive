@@ -1,3 +1,10 @@
+massive-passive (0.2.6-3) stable; urgency=low
+
+  * fix missing permissions in massive-passive.postinst
+  * add missing addgroup call for group nagios
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 09 Jan 2013 10:48:18 +0100
+
 massive-passive (0.2.6-2) stable; urgency=low
 
   * include upstream bugfix for wrong logfile permissions

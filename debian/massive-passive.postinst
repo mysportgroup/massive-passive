@@ -20,8 +20,14 @@ set -e
 
 case "$1" in
     configure)
+        if [ ! $(getent group nagios) ]; then
+            echo "addgroup nagios ..."
+            addgroup --system nagios
+        fi
+
         if [ ! $(getent passwd nagios) ]; then 
-            adduser --system --shell /bin/false --home /var/lib/nagios nagios
+            echo "adduser nagios ..."
+            adduser --system --shell /bin/false --group nagios --home /var/lib/nagios nagios
         fi
         chown nagios:nagios /var/run/massive-passive
         chown nagios:nagios /var/log/massive-passive
