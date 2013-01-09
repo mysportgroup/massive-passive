@@ -22,6 +22,8 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
     cwd = check_data.get('cwd', '/')
     close_fds = check_data.get('close_fds', True)
 
+    logger.info('Executing %r.', ' '.join(command))
+
     cmd = subprocess.Popen(
         command,
         stdout=stdout,
