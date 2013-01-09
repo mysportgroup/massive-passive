@@ -25,6 +25,9 @@ case "$1" in
         fi
         chown nagios:nagios /var/run/massive-passive
         chown nagios:nagios /var/log/massive-passive
+        chmod o-rwx /var/log/massive-passive
+        chown nagios:nagios /etc/massive-passive/checks.d
+        chmod o-rwx /etc/massive-passive/checks.d
         insserv -d /etc/init.d/massive-passive
         service massive-passive restart
     ;;
