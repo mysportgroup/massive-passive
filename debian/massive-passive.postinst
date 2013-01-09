@@ -27,7 +27,7 @@ case "$1" in
 
         if [ ! $(getent passwd nagios) ]; then 
             echo "adduser nagios ..."
-            adduser --system --shell /bin/false --ingroup nagios --home /var/lib/nagios nagios
+            adduser --system --shell /bin/bash --ingroup nagios --home /var/lib/nagios nagios
         fi
 
         chown nagios:nagios /var/run/massive-passive
