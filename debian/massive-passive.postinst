@@ -20,12 +20,12 @@ set -e
 
 case "$1" in
     configure)
-        if [ ! $(getent group nagios) ]; then
+        if [ ! "$(getent group nagios)" ]; then
             echo "addgroup nagios ..."
             addgroup --system nagios
         fi
 
-        if [ ! $(getent passwd nagios) ]; then 
+        if [ ! "$(getent passwd nagios)" ]; then 
             echo "adduser nagios ..."
             adduser --system --shell /bin/bash --ingroup nagios --home /var/lib/nagios nagios
         fi
