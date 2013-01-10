@@ -35,7 +35,7 @@ case "$1" in
         chmod o-rwx /var/log/massive-passive
         chown nagios:nagios /etc/massive-passive/checks.d
         chmod o-rwx /etc/massive-passive/checks.d
-        insserv -d /etc/init.d/massive-passive
+        /usr/lib/insserv/insserv -d /etc/init.d/massive-passive
         service massive-passive restart
     ;;
 

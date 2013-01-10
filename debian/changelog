@@ -1,3 +1,15 @@
+massive-passive (0.2.7-2ubuntu2) precise; urgency=low
+
+  * switch to python2.7 for ubuntu precise
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 10 Jan 2013 19:09:56 +0100
+
+massive-passive (0.2.7-2ubuntu1) precise; urgency=low
+
+  * ubuntu precise port 
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 10 Jan 2013 18:06:41 +0100
+
 massive-passive (0.2.7-2) stable; urgency=low
 
   * add missing quotes for getent passwd/group calls

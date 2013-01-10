@@ -1,3 +1,4 @@
 change-user-to-nagios.patch
 change_pidfile_dir.patch
 change_logfile_path.patch
+change-python-shebang-to-2.7.patch

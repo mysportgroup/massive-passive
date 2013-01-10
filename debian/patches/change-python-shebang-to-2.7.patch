@@ -1,0 +1,90 @@
+Index: massive-passive_0.2.7/mplib/__init__.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/__init__.py	2013-01-10 19:21:05.592680996 +0100
++++ massive-passive_0.2.7/mplib/__init__.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/cmd.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/cmd.py	2013-01-10 19:21:05.572681066 +0100
++++ massive-passive_0.2.7/mplib/cmd.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/config.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/config.py	2013-01-10 19:21:05.580681020 +0100
++++ massive-passive_0.2.7/mplib/config.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/daemon.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/daemon.py	2013-01-10 19:21:05.568681068 +0100
++++ massive-passive_0.2.7/mplib/daemon.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/getopts.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/getopts.py	2013-01-10 19:21:05.596681000 +0100
++++ massive-passive_0.2.7/mplib/getopts.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/log.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/log.py	2013-01-10 19:21:05.564681035 +0100
++++ massive-passive_0.2.7/mplib/log.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/scheduler.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/scheduler.py	2013-01-10 19:21:05.576681044 +0100
++++ massive-passive_0.2.7/mplib/scheduler.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/mplib/threads.py
+===================================================================
+--- massive-passive_0.2.7.orig/mplib/threads.py	2013-01-10 19:21:05.588680995 +0100
++++ massive-passive_0.2.7/mplib/threads.py	2013-01-10 19:21:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+Index: massive-passive_0.2.7/massive-passive
+===================================================================
+--- massive-passive_0.2.7.orig/massive-passive	2013-01-08 11:08:23.000000000 +0100
++++ massive-passive_0.2.7/massive-passive	2013-01-10 19:30:46.668682814 +0100
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python2.7
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
