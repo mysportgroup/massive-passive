@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for #PACKAGE#
+# postinst script for massive-passive
 #
 # see: dh_installdeb(1)
 
@@ -28,6 +28,10 @@ case "$1" in
         if [ ! "$(getent passwd nagios)" ]; then 
             echo "adduser nagios ..."
             adduser --system --shell /bin/bash --ingroup nagios --home /var/lib/nagios nagios
+	else
+            groups nagios | cut -d ":" -f2- | grep nagios 2>&1 > /dev/null
+            if [ ! "$?" = 0 ]; then
+                adduser nagios nagios
         fi
 
         chown nagios:nagios /var/run/massive-passive
@@ -35,7 +39,7 @@ case "$1" in
         chmod o-rwx /var/log/massive-passive
         chown nagios:nagios /etc/massive-passive/checks.d
         chmod o-rwx /etc/massive-passive/checks.d
-        /usr/lib/insserv/insserv -d /etc/init.d/massive-passive
+        #/usr/lib/insserv/insserv -d /etc/init.d/massive-passive
         service massive-passive restart
     ;;
 
