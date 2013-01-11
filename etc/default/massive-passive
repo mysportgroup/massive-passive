@@ -5,7 +5,18 @@
 #
 # This is a POSIX shell fragment
 #
+
+LOGLEVEL="info"
 PIDFILE="/tmp/massive-passive.pid"
+CONFDIR="/etc/massive-passive/checks.d"
+USER="nobody"
+GROUP="nogroup"
+BATCH_WAIT_TIME="2"
+BATCH_MAX_ITEMS="10"
+INITIAL_RANDOM_WAIT_RANGE="10"
+LOGFILE="/tmp/massive-passive.log"
+PATH_TO_SEND_NSCA="/usr/sbin/send_nsca"
+
 
 # Additional options that are passed to the Daemon.
-DAEMON_ARGS="--loglevel info --user nobody --group nogroup --batch-mode --batch-wait-time 2 --pidfile $PIDFILE"
+DAEMON_ARGS="--loglevel $LOGLEVEL --user $USER --group $GROUP --batch-mode --batch-wait-time $BATCH_WAIT_TIME --batch-max-items $BATCH_MAX_ITEMS --initial-random-wait-range $INITIAL_RANDOM_WAIT_RANGE --pidfile $PIDFILE --logfile $LOGFILE"
