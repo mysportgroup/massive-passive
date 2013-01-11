@@ -1,3 +1,15 @@
+massive-passive (0.2.8-ubuntu2) precise; urgency=low
+
+  * add missing "fi" in postinst 
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Fri, 11 Jan 2013 15:36:41 +0100
+
+massive-passive (0.2.8-ubuntu1) precise; urgency=low
+
+  * new upstream release
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Fri, 11 Jan 2013 15:29:27 +0100
+
 massive-passive (0.2.7-2ubuntu2) precise; urgency=low
 
   * switch to python2.7 for ubuntu precise

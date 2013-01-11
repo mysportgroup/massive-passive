@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
-        service massive-passive stop
+        #service massive-passive stop
         #/usr/lib/insserv/insserv -r -d /etc/init.d/massive-passive
     ;;
 

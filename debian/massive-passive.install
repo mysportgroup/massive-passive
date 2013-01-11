@@ -1,4 +1,4 @@
-etc/init.d/massive-passive etc/init.d
+#etc/init.d/massive-passive etc/init.d
 etc/default/massive-passive etc/default
 etc/massive-passive/checks.d/first_check.cfg usr/share/massive-passive/examples/
 etc/massive-passive/checks.d/second_check.cfg usr/share/massive-passive/examples/

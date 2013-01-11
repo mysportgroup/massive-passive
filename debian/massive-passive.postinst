@@ -32,6 +32,7 @@ case "$1" in
             groups nagios | cut -d ":" -f2- | grep nagios 2>&1 > /dev/null
             if [ ! "$?" = 0 ]; then
                 adduser nagios nagios
+            fi
         fi
 
         chown nagios:nagios /var/run/massive-passive
@@ -40,7 +41,7 @@ case "$1" in
         chown nagios:nagios /etc/massive-passive/checks.d
         chmod o-rwx /etc/massive-passive/checks.d
         #/usr/lib/insserv/insserv -d /etc/init.d/massive-passive
-        service massive-passive restart
+        #service massive-passive restart
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
