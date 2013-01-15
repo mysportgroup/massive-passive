@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.2.9'
+__version__ = '0.2.10'
 
 import os
 import sys
@@ -109,11 +109,10 @@ class Main(object):
     def add_jobs_to_scheduler(self):
         self.logger.debug('Getting passive check configs ...')
         configs = self.get_check_configs()
-        self.scheduler.schedule_passive_checks_initially(
+        self.scheduler.add_passive_checks(
             configs,
             wait_range_end=self.options.initial_random_wait_range
         )
-        self.scheduler.add_passive_checks(configs)
 
     def start_send_worker(self):
         self.logger.debug('Calling send_worker thread start ...')
@@ -162,8 +161,8 @@ class Main(object):
         )
         self.stop_scheduler()
         self.scheduler = self._scheduler(self.send_queue)
-        self.add_jobs_to_scheduler()
         self.start_scheduler()
+        self.add_jobs_to_scheduler()
         self.logger.info('Config reload done.')
 
     def shutdown(self, signum, sigframe):
