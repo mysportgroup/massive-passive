@@ -1,3 +1,1 @@
-change-user-to-nagios.patch
-change_pidfile_dir.patch
-change_logfile_path.patch
+change-etc-default-values.patch

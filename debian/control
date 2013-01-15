@@ -10,7 +10,7 @@ Standards-Version: 3.9.1
 Package: massive-passive
 Architecture: all
 Depends: ${python:Depends}, python-massive-passive (=${source:Version}), adduser, nsca
-Suggests: nagios-plugins-basic, nagios-plugins-standard, nagios-plugins, nagios-plugins-contrib
+Suggests: nagios-plugins-basic, nagios-plugins-standard, nagios-plugins, nagios-plugins-contrib, nagios-plugins-common
 Description: A scheduler for passive nagios/icinga checks.
  A scheduler for passive nagios/icinga checks.
  massive-passive is a simple scheduler for passive nagios/icinga checks.
