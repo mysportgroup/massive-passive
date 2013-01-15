@@ -16,7 +16,11 @@ Why a scheduler for passive nagios/icinga checks and not using cron?
 Cron is good. But it can not execute passive checks every 5 seconds.
 massive-passive can execute multiple passive checks every "n" second.
 So you can execute one check every 5 seconds, another every 7 seconds, and
-several other every 30 seconds, and so on.
+several other every 30 seconds, and so on. From Version 0.2.10 on, it is
+possible to say:
+
+    Execute this job every day and every hour between 9 and 17 (office workhours),
+    beginning at the date 2099-11-11 11:11:11
 
 You can also just use every existing normal nagios/icinga host and service
 check (if written with the standard rules for nagios/icinga checks in mind)
@@ -34,6 +38,7 @@ don't have to do this. The apscheduler (thanks to Alex Grönholm) behind
 massive-passive ensures it on it's own. But - if you want several running
 instances of your check, you can do that, too. Just configure your check
 with the "max_instances" parameter with a value greater then 1 and it's done.
+All this does not work out-of-the-box with cron.
 
 So just configure your nagios/icinga check and have fun!
 
@@ -75,7 +80,7 @@ But for a better understanding we take a closer look at them.
                     "icinga-host-1": "127.0.1.1:9999",
                     "icinga-host-2": "10.10.10.1"
             },
-    "command": "/bin/bash -c '/bin/echo hello this is an environment test: $TESTERTEST'",
+    "command": "/bin/echo 'hello this is an environment test: $TESTERTEST'",
     "env": {"TESTERTEST": "moep!"},
     "check_type": "service_check",
     "check_hostname": "this.is.a.hostname",
@@ -107,6 +112,34 @@ check_hostname: The hostname for this check. Must be equal with the hostname
 configured on the nagios/icinga side.
 
 max_instances: The maximum of running instances of a check at the same time. (default 1)
+
+At version 0.2.10 it also possible to do something like this:
+-------------------------------------------------------------
+
+{
+    "check_description": "First passive check",
+    "interval":
+           {
+                    "hour": "9-17",
+                    "day": "1-12,24-30",
+                    "start_date": "2099-11-11 11:11:11"
+           }
+    "servers":
+           {
+                    "nagios-host-1": "127.0.0.1:5667",
+                    "icinga-host-1": "127.0.1.1:9999",
+                    "icinga-host-2": "10.10.10.1"
+            },
+    "command": "/bin/echo 'hello this is an environment test: $TESTERTEST'",
+    "env": {"TESTERTEST": "moep!"},
+    "check_type": "service_check",
+    "check_hostname": "this.is.a.hostname",
+    "max_instances": 3
+}
+
+which means:
+    process this check every day on the 1 to 12 and 24 to 30 of the month,
+    between 9 and 17 and do it first at the 2099-11-11 11:11:11.
 
 
 After configuring your first check, you can do:
@@ -149,9 +182,9 @@ Options:
                         How much items to use in batch mode. A value of 0
                         means unlimited items. Default: 10
   -u USER, --user=USER  The username who should execute this process. Default:
-                        real
+                        <the actual username>
   -g GROUP, --group=GROUP
-                        The groupname this process runs at. Default: real
+                        The groupname this process runs at. Default: <the actual group name>
   --initial-random-wait-range=INITIAL_RANDOM_WAIT_RANGE
                         The seconds to random wait before the scheduler
                         executes the jobs the first time. This only applies
@@ -180,4 +213,15 @@ General Public License along with this program.  If not, see
 
 
 A brief documentation will follow. Thank you and have fun!
+
+
+TODO:
+-----
+
+    * write a Documentation
+    * write a own transport channel to get rid of nsca/send_nsca
+      This channel should support ssl client auth.
+    * Make it possible that the massive-passive client can configure it's checks
+      on it's own - based on the nagios/icinga config. This feature can be switched of.
+
 
