@@ -85,7 +85,7 @@ class ConfigDir(ConfigFile):
             %(self.__module__, self.__class__.__name__)
         )
         logger.debug('Initialized with %r.', self.path)
-        for config in iglob(os.path.join(self.path, '*.cfg')):
+        for enum, config in enumerate(iglob(os.path.join(self.path, '*.cfg')), 1):
             try:
                 config = ConfigFile(config)
             except Exception as error:
@@ -93,8 +93,8 @@ class ConfigDir(ConfigFile):
                 logger.exception(error)
                 continue
             else:
-                when = self.setdefault(config['interval'], list())
-                when.append(config)
+                self.update({enum: config})
+
 
 
 if __name__ == '__main__':

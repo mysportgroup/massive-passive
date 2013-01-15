@@ -19,4 +19,4 @@ PATH_TO_SEND_NSCA="/usr/sbin/send_nsca"
 
 
 # Additional options that are passed to the Daemon.
-DAEMON_ARGS="--loglevel $LOGLEVEL --user $USER --group $GROUP --batch-mode --batch-wait-time $BATCH_WAIT_TIME --batch-max-items $BATCH_MAX_ITEMS --initial-random-wait-range $INITIAL_RANDOM_WAIT_RANGE --pidfile $PIDFILE --logfile $LOGFILE"
+DAEMON_ARGS="--loglevel $LOGLEVEL --user $USER --group $GROUP --batch-mode --batch-wait-time $BATCH_WAIT_TIME --batch-max-items $BATCH_MAX_ITEMS --initial-random-wait-range $INITIAL_RANDOM_WAIT_RANGE --pidfile $PIDFILE --logfile $LOGFILE --confdir $CONFDIR"

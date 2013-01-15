@@ -15,7 +15,6 @@ from datetime import datetime
 from mplib.cmd import passive_check_cmd
 from apscheduler.scheduler import Scheduler
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -28,39 +27,114 @@ class MassivePassiveScheduler(Scheduler):
             %(self.__class__.__module__, self.__class__.__name__)
         )
 
-    def add_passive_checks(self, checks_config):
-        for interval, checks in checks_config.iteritems():
-            for check in checks:
+    def add_passive_checks(self, checks_config, wait_range_start=2, wait_range_end=10):
+        for enum, check in checks_config.iteritems():
+            self.logger.debug('Processing %d. check %r ...', enum, check)
+            interval = check.get('interval', None)
+
+            if isinstance(interval, int):
                 self.logger.info(
-                    'Adding check %r with time interval %d.',
-                    check.path, check.get('interval', 60)
+                    'Adding %d. check %r with time interval %d as an interval based check.',
+                    enum, check.path, check.get('interval')
                 )
-                self.add_interval_job(
-                    passive_check_cmd,
-                    seconds=interval,
-                    max_instances=check.get('max_instances', 1),
-                    misfire_grace_time=check.get('misfire_grace_time', 2),
-                    args=(check, self.queue)
-                )
-    def schedule_passive_checks_initially(self, checks_config, wait_range_start=2 , wait_range_end=10):
-        for checks in checks_config.itervalues():
-            for check in checks:
-                date = datetime.fromtimestamp(
-                    time() + randint(
-                        wait_range_start,
-                        wait_range_end if wait_range_end else wait_range_start
+
+                try:
+                    self.add_interval_check(
+                        check,
+                        wait_range_start=wait_range_start,
+                        wait_range_end=wait_range_end
                     )
-                )
+                except Exception as error:
+                    self.logger.exception(error)
+                    self.logger.error(
+                        'There was an error while adding %d. check %r as an interval based check. Error was: %s',
+                        enum, check.path, error
+                    )
+
+            elif isinstance(interval, dict):
                 self.logger.info(
-                    'Check %r will be initially executed at %s.',
-                    check,
-                    date
+                    'Adding %d. check %r with %r as a cron based check.'
+                    %(enum, check.path, ', '.join(('%s=%r' %(k,v) for k,v in interval.iteritems())))
                 )
-                self.add_date_job(
-                    passive_check_cmd,
-                    date=date,
-                    args=(check, self.queue)
+                try:
+                    self.add_cron_check(check)
+                except Exception as error:
+                    self.logger.exception(error)
+                    self.logger.error(
+                        'There was an error while adding %d. check %r as a cron based check. Error was: %s',
+                        enum, check.path, error
+                    )
+
+            else:
+                self.logger.error(
+                    '%d. check %r is has no valid interval attribute. Ignoring it.',
+                    enum, check.path
                 )
+
+    def add_interval_check(self, check, wait_range_start=2, wait_range_end=10):
+        self.schedule_passive_check_initially(
+            check,
+            wait_range_start=wait_range_start,
+            wait_range_end=wait_range_end
+        )
+
+        self.add_interval_job(
+            passive_check_cmd,
+            seconds=check.get('interval'),
+            max_instances=check.get('max_instances', 1),
+            misfire_grace_time=check.get('misfire_grace_time', 2),
+            args=(check, self.queue)
+        )
+
+    def add_cron_check(self, check):
+
+        interval = check.get('interval')
+        year = interval.get('year', None)
+        month = interval.get('month', None)
+        week = interval.get('week', None)
+        day_of_week = interval.get('day_of_week', None)
+        hour = interval.get('hour', None)
+        minute = interval.get('minute', None)
+        second = interval.get('second', None)
+        start_date = interval.get('start_date', None)
+        args = (check, self.queue)
+
+        self.add_cron_job(
+            passive_check_cmd,
+            year=year,
+            month=month,
+            week=week,
+            day_of_week=day_of_week,
+            hour=hour,
+            minute=minute,
+            second=second,
+            start_date=start_date,
+            args=args,
+            max_instances=check.get('max_instances', 1),
+            misfire_grace_time=check.get('misfire_grace_time', 2),
+        )
+
+    def schedule_passive_check_initially(self, check, wait_range_start=2 , wait_range_end=10):
+        date = datetime.fromtimestamp(
+            time() + randint(
+                wait_range_start,
+                wait_range_end if wait_range_end else wait_range_start
+            )
+        )
+
+        self.logger.info(
+            'Check %r will be initially executed at %s.',
+            check,
+            date
+        )
+
+        self.add_date_job(
+            passive_check_cmd,
+            date=date,
+            args=(check, self.queue)
+        )
+
+
 
 
 if __name__ == '__main__':
