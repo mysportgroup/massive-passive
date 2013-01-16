@@ -1,3 +1,10 @@
+massive-passive (0.2.11-ubuntu1) precise; urgency=low
+
+  * new upstream release 0.2.11
+  * adding logrotate config
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 16 Jan 2013 10:19:45 +0100
+
 massive-passive (0.2.8-ubuntu2) precise; urgency=low
 
   * add missing "fi" in postinst 
