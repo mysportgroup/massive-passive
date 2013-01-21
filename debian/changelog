@@ -1,3 +1,9 @@
+massive-passive (0.2.12-ubuntu2) precise; urgency=low
+
+  * new upstream release 0.2.12
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Mon, 21 Jan 2013 11:52:57 +0100
+
 massive-passive (0.2.11-ubuntu3) precise; urgency=low
 
   * remove upstart geraffel again :( 
