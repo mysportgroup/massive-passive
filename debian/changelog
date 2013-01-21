@@ -1,3 +1,9 @@
+massive-passive (0.2.12-1) stable; urgency=low
+
+  * new upstream release
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Mon, 21 Jan 2013 11:43:11 +0100
+
 massive-passive (0.2.11-2) stable; urgency=low
 
   * add logrotate config
