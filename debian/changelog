@@ -1,3 +1,9 @@
+massive-passive (0.2.12-2) stable; urgency=low
+
+  * fix wrong location for pidfile
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Mon, 21 Jan 2013 16:47:52 +0100
+
 massive-passive (0.2.12-1) stable; urgency=low
 
   * new upstream release
