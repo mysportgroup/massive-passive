@@ -9,7 +9,7 @@ __copyright__ = '(c) 2012 by mysportgroup.de'
 
 import logging
 import subprocess
-import os
+from time import time
 
 BIN_SEND_NSCA = '/usr/sbin/send_nsca'
 
@@ -38,9 +38,9 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
     stdout = stdout.rstrip()
     stderr = stderr.rstrip()
 
-    logger.debug(
+    logger.info(
         'Command %r returned with %s. stdout was: %r, stderr was: %r',
-        command, cmd.returncode, stdout, stderr
+        ' '.join(command), cmd.returncode, stdout, stderr
     )
 
     result = {
@@ -55,18 +55,23 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
 
 def send_nsca(message, socket, port='5667', timeout='10', delim='\t',
               config_file='/etc/send_nsca.cfg', path_to_send_nsca=BIN_SEND_NSCA):
+    jobid = time()
     logger.debug(
         (
             'Called with parameters: message => %r, socket => %r, '
             'port => %r, timeout => %r, delim => %r, config_file => %r, '
-            'path_to_send_nsca => %r'
+            'path_to_send_nsca => %r, jobid => %.6f'
         ),
-        message, socket, port, timeout, delim, config_file, path_to_send_nsca
+        message, socket, port, timeout, delim, config_file, path_to_send_nsca, jobid
     )
 
     ip = socket[0]
     if len(socket) > 1:
         port = socket[1]
+
+    logger.info(
+        'send_nsca with jobid %.6f running for message: %r', jobid, message
+    )
 
     cmd = subprocess.Popen(
         [path_to_send_nsca, '-H', ip, '-p', port, '-to', timeout, '-d', delim, '-c', config_file],
@@ -81,8 +86,9 @@ def send_nsca(message, socket, port='5667', timeout='10', delim='\t',
 
     stdout, stderr = cmd.communicate(input=message)
 
-    logger.debug(
-        'send_nsca returned with %s. message was: %r, stdout was: %r, stderr was: %r',
+    logger.info(
+        'send_nsca with jobid %.6f returned with %s. message was: %r, stdout was: %r, stderr was: %r',
+        jobid,
         cmd.returncode,
         message,
         stdout,
