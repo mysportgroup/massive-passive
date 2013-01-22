@@ -1,3 +1,9 @@
+massive-passive (0.2.13-1) stable; urgency=low
+
+  * new upstream release
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Tue, 22 Jan 2013 22:21:01 +0100
+
 massive-passive (0.2.12-3) stable; urgency=low
 
   * change service restart to start in massive-passive.postinst
