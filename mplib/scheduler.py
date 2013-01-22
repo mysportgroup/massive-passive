@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 import logging
@@ -14,13 +14,14 @@ from random import randint
 from datetime import datetime
 from mplib.cmd import passive_check_cmd
 from apscheduler.scheduler import Scheduler
+from apscheduler.threadpool import ThreadPool
 
 logger = logging.getLogger(__name__)
 
 
 class MassivePassiveScheduler(Scheduler):
-    def __init__(self, queue):
-        super(MassivePassiveScheduler, self).__init__()
+    def __init__(self, queue, **kwargs):
+        super(MassivePassiveScheduler, self).__init__(**kwargs)
         self.queue = queue
         self.logger = logging.getLogger(
             '%s.%s'
