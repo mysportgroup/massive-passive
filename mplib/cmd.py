@@ -4,12 +4,12 @@
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __copyright__ = '(c) 2012 by mysportgroup.de'
 
 import logging
 import subprocess
-from time import time
+from uuid import uuid4 as create_job_id
 
 BIN_SEND_NSCA = '/usr/sbin/send_nsca'
 
@@ -17,12 +17,13 @@ logger = logging.getLogger(__name__)
 
 def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
 
+    check_description = check_data.get('check_description')
     command = check_data.get('command')
     env = check_data.get('env', None)
     cwd = check_data.get('cwd', '/')
     close_fds = check_data.get('close_fds', True)
 
-    logger.info('Executing %r.', ' '.join(command))
+    logger.info('Executing %r (command is: %r).', check_description, ' '.join(command))
 
     cmd = subprocess.Popen(
         command,
@@ -39,8 +40,8 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
     stderr = stderr.rstrip()
 
     logger.info(
-        'Command %r returned with %s. stdout was: %r, stderr was: %r',
-        ' '.join(command), cmd.returncode, stdout, stderr
+        'Check %r (command %r) returned with %s. stdout was: %r, stderr was: %r',
+        check_description, ' '.join(command), cmd.returncode, stdout, stderr
     )
 
     result = {
@@ -55,12 +56,12 @@ def passive_check_cmd(check_data, queue, stdout=subprocess.PIPE, stderr=subproce
 
 def send_nsca(message, socket, port='5667', timeout='10', delim='\t',
               config_file='/etc/send_nsca.cfg', path_to_send_nsca=BIN_SEND_NSCA):
-    jobid = time()
+    jobid = create_job_id()
     logger.debug(
         (
             'Called with parameters: message => %r, socket => %r, '
             'port => %r, timeout => %r, delim => %r, config_file => %r, '
-            'path_to_send_nsca => %r, jobid => %.6f'
+            'path_to_send_nsca => %r, jobid => %s'
         ),
         message, socket, port, timeout, delim, config_file, path_to_send_nsca, jobid
     )
@@ -70,7 +71,7 @@ def send_nsca(message, socket, port='5667', timeout='10', delim='\t',
         port = socket[1]
 
     logger.info(
-        'send_nsca with jobid %.6f running for message: %r', jobid, message
+        'send_nsca (job_id %s) to %s is running for message: %r', jobid, ':'.join(socket), message
     )
 
     cmd = subprocess.Popen(
@@ -86,16 +87,7 @@ def send_nsca(message, socket, port='5667', timeout='10', delim='\t',
 
     stdout, stderr = cmd.communicate(input=message)
 
-    logger.info(
-        'send_nsca with jobid %.6f returned with %s. message was: %r, stdout was: %r, stderr was: %r',
-        jobid,
-        cmd.returncode,
-        message,
-        stdout,
-        stderr,
-    )
-
-    return cmd.returncode, message, stdout, stderr
+    return jobid, cmd.returncode, message, stdout, stderr
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.2.12'
+__version__ = '0.2.13'
 
 import os
 import sys
@@ -18,11 +18,13 @@ from threading import Event
 from mplib.config import ConfigDir
 from mplib.daemon import daemonize
 from setproctitle import setproctitle
+from mplib.scheduler import ThreadPool
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNscaWorker
 from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
+
 
 
 class Main(object):
@@ -48,7 +50,6 @@ class Main(object):
             path_to_send_nsca=self.options.path_to_send_nsca
         )
         self._scheduler = scheduler
-        self.scheduler = self._scheduler(self.send_queue)
 
     def run(self):
         self.set_proc_title()
@@ -103,6 +104,15 @@ class Main(object):
 
     def start_scheduler(self):
         self.logger.debug('Calling scheduler start ...')
+        jobs_counter = len(self.get_check_configs())
+        self.scheduler = self._scheduler(
+            self.send_queue,
+            threadpool=ThreadPool(
+                core_threads=(jobs_counter / 10),
+                max_threads=jobs_counter,
+                keepalive=30
+            )
+        )
         self.scheduler.start()
         self.logger.debug('Scheduler is running: %r.', self.scheduler.running)
 
@@ -160,7 +170,7 @@ class Main(object):
             'Received Signal %s ... reloading config now ...', signum
         )
         self.stop_scheduler()
-        self.scheduler = self._scheduler(self.send_queue)
+        #self.scheduler = self._scheduler(self.send_queue)
         self.start_scheduler()
         self.add_jobs_to_scheduler()
         self.logger.info('Config reload done.')

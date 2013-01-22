@@ -60,11 +60,11 @@ class SendNscaExecutor(Thread):
         self.logger.debug(
             'Executing %r with socket %r and message %r.',
             self.path_to_send_nsca,
-            self.socket,
+            ':'.join(self.socket),
             self.message
         )
 
-        returncode, message, stdout, stderr = send_nsca(
+        jobid, returncode, message, stdout, stderr = send_nsca(
             self.message,
             self.socket,
             path_to_send_nsca=self.path_to_send_nsca
@@ -72,16 +72,17 @@ class SendNscaExecutor(Thread):
 
         if returncode:
             self.logger.info(
-                'send_nsca job to %r was not successful.', self.socket
+                'send_nsca (job_id %s) to %r was not successful.', jobid, ':'.join(self.socket)
             )
         else:
             self.logger.info(
-                'send_nsca job to %r was successful.', self.socket
+                'send_nsca (job_id %s) to %r was successful.', jobid, ':'.join(self.socket)
             )
 
         self.logger.debug(
-            'send_nsca to %r returned with %r, stdout was %r, stderr was %r.',
-            self.socket,
+            'send_nsca (job_id %s) to %r returned with %r, stdout was %r, stderr was %r.',
+            jobid,
+            ':'.join(self.socket),
             returncode,
             stdout,
             stderr
