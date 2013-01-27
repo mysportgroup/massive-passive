@@ -15,7 +15,7 @@ setup(
         maintainer_email='r.wittler@mysportgroup.de',
         license='GPL3+',
         url='https://github.com/mysportgroup/massive-passive',
-        install_requires=['simplejson', 'apscheduler', 'setproctitle'],
+        install_requires=['simplejson', 'apscheduler', 'setproctitle', 'Twisted'],
         packages=['mplib'],
         data_files=[
             ('/usr/sbin', ['massive-passive-client', 'massive-passive-server']),
