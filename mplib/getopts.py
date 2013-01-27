@@ -1,23 +1,199 @@
 #!/usr/bin/python2.6
 # -*- coding: utf-8 -*-
+from mplib.utils import is_somehow_readable_for_uid
 
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 import os
 import pwd
 import grp
 import optparse
 import logging
+from utils import is_somehow_writeable_for_uid
+from utils import is_somehow_readable_for_uid
 
 
 logger = logging.getLogger(__name__)
 
-def getopt(usage=None, description=None, version=None, epilog=None):
+def server_getopt(usage=None, description=None, version=None, epilog=None):
+    parser = optparse.OptionParser(
+        usage=usage,
+        description=description,
+        version=version,
+        epilog=epilog
+    )
 
+    parser.add_option(
+        '--foreground',
+        '-f',
+        default=False,
+        action='store_true',
+        help='Do not run in Background. Default: %default'
+    )
+
+    parser.add_option(
+        '--loglevel',
+        '-l',
+        choices=['notset', 'NOTSET', 'debug', 'DEBUG', 'info', 'INFO', 'warning', 'WARNING', 'error', 'ERROR'],
+        default='INFO',
+        help='The loglevel to use. Default: %default'
+    )
+
+    # removed this option - follows later
+    #parser.add_option(
+    #    '--conffile',
+    #    default='/etc/massive-passive-client/massive-passive-client.cfg',
+    #    help='The path to the massive_passive config file itself. Default: %default'
+    #)
+
+    parser.add_option(
+        '--pidfile',
+        default='/tmp/massive-passive-server.pid',
+        help='The path to the pidfile (if running in Background). Default: %default'
+    )
+
+    parser.add_option(
+        '-u',
+        '--user',
+        default=pwd.getpwuid(os.getuid()).pw_name,
+        help='The username who should execute this process. Default: %default'
+    )
+
+    parser.add_option(
+        '-g',
+        '--group',
+        default=grp.getgrgid(os.getgid()).gr_name,
+        help='The groupname this process runs at. Default: %default'
+    )
+
+    parser.add_option(
+        '--logfile',
+        default='/tmp/massive-passive-server.log',
+        help='The path to the logfile. Default: %default'
+    )
+
+    parser.add_option(
+        '--command-file',
+        #default='/var/lib/icinga/rw/icinga.cmd'
+        help='The path to the nagios/icinga external command file.'
+    )
+
+    parser.add_option(
+        '--ssl-ca-cert',
+        help='The path to the ssl ca cert.'
+    )
+
+    parser.add_option(
+        '--ssl-key-file',
+        help='The path to the server ssl key file.'
+    )
+
+    parser.add_option(
+        '--ssl-cert-file',
+        help='The path to the server ssl cert file.'
+    )
+
+    options, args = parser.parse_args()
+
+    options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
+    options.user = pwd.getpwnam(options.user).pw_uid
+    options.group = grp.getgrnam(options.group).gr_gid
+
+    if not options.command_file:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the nagios/icinga external command file.\n\n %s'
+                %(parser.format_help(),)
+            )
+        )
+    else:
+        if not os.path.exists(options.command_file):
+            parser.exit(
+                status=2,
+                msg='No such File: %s.' %(options.command_file)
+            )
+
+        if is_somehow_writeable_for_uid(options.command_file, options.user) is False:
+            parser.exit(
+                status=3,
+                msg='Command File %r is not writable for uid %d' %(options.command_file, options.user)
+            )
+
+
+    if not options.ssl_ca_cert:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the ssl ca cert.\n\n %s'
+                %(parser.format_help(),)
+                )
+        )
+#    else:
+#        if not os.path.exists(options.ssl_ca_cert):
+#            parser.exit(
+#                status=3,
+#                msg='No such File: %s.' %(options.ssl_ca_cert)
+#            )
+#
+#        if is_somehow_writeable_for_uid(options.ssl_ca_cert, options.user) is False:
+#            parser.exit(
+#                status=4,
+#                msg='SSL CA File %r is not writable for uid %d' %(options.ssl_ca_cert, options.user)
+#            )
+
+
+    if not options.ssl_key_file:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the server ssl key file.\n\n %s'
+                %(parser.format_help(),)
+                )
+        )
+#    else:
+#        if not os.path.exists(options.ssl_key_file):
+#            parser.exit(
+#                status=3,
+#                msg='No such File: %s.' %(options.ssl_key_file)
+#            )
+#
+#        if is_somehow_readable_for_uid(options.ssl_key_file, options.user) is False:
+#            parser.exit(
+#                status=4,
+#                msg='SSL Key File %r is not readable for uid %d' %(options.ssl_key_file, options.user)
+#            )
+
+
+    if not options.ssl_cert_file:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the server ssl cert file.\n\n %s'
+                %(parser.format_help(),)
+                )
+        )
+#    else:
+#        if not os.path.exists(options.ssl_cert_file):
+#            parser.exit(
+#                status=3,
+#                msg='No such File: %s.' %(options.ssl_cert_file)
+#            )
+#
+#        if is_somehow_readable_for_uid(options.ssl_cert_file, options.user) is False:
+#            parser.exit(
+#                status=4,
+#                msg='SSL Cert File %r is not readable for uid %d' %(options.ssl_cert_file, options.user)
+#            )
+
+    return options, args
+
+
+def client_getopt(usage=None, description=None, version=None, epilog=None):
     parser = optparse.OptionParser(
         usage=usage,
         description=description,
@@ -50,13 +226,13 @@ def getopt(usage=None, description=None, version=None, epilog=None):
     # removed this option - follows later
     #parser.add_option(
     #    '--conffile',
-    #    default='/etc/massive-passive/massive-passive.cfg',
-     #   help='The path to the massive_passive config file itself. Default: %default'
+    #    default='/etc/massive-passive-client/massive-passive-client.cfg',
+    #    help='The path to the massive_passive config file itself. Default: %default'
     #)
 
     parser.add_option(
         '--pidfile',
-        default='/tmp/massive-passive.pid',
+        default='/tmp/massive-passive-client.pid',
         help='The path to the pidfile (if running in Background). Default: %default'
     )
 
@@ -113,7 +289,7 @@ def getopt(usage=None, description=None, version=None, epilog=None):
 
     parser.add_option(
         '--logfile',
-        default='/tmp/massive-passive.log',
+        default='/tmp/massive-passive-client.log',
         help='The path to the logfile. Default: %default'
     )
 
@@ -131,8 +307,19 @@ def getopt(usage=None, description=None, version=None, epilog=None):
 
     return options, args
 
-def get_description():
-    return 'massive_passive is a tool for scheduling passive nagios/icinga checks.'
+def get_client_description():
+    return (
+        'massive-passive is a client/server toolset for scheduling passive nagios/icinga ' +
+        'checks. This is the client programm which schedules the checks and sends the ' +
+        'results to the massive-passive-server'
+    )
+
+def get_server_description():
+    return (
+        'massive-passive is a client/server toolset for scheduling passive nagios/icinga ' +
+        'checks. This is the server programm which receives the check results and write ' +
+        'them into the nagios/icinga external command file.'
+        )
 
 def get_gpl3_text():
     return '''author: Robin Wittler <r.wittler@mysportgroup.de>

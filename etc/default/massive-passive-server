@@ -1,0 +1,17 @@
+# Defaults for massive-passive initscript
+# sourced by /etc/init.d/massive-passive
+# installed at /etc/default/massive-passsive by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+LOGLEVEL="info"
+PIDFILE="/tmp/massive-passive-server.pid"
+USER="nobody"
+GROUP="nogroup"
+LOGFILE="/tmp/massive-passive-server.log"
+
+
+# Additional options that are passed to the Daemon.
+DAEMON_ARGS="--loglevel $LOGLEVEL --user $USER --group $GROUP --pidfile $PIDFILE --logfile $LOGFILE"
