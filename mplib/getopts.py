@@ -1,6 +1,5 @@
 #!/usr/bin/python2.6
 # -*- coding: utf-8 -*-
-from mplib.utils import is_somehow_readable_for_uid
 
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
@@ -13,9 +12,7 @@ import pwd
 import grp
 import optparse
 import logging
-from utils import is_somehow_writeable_for_uid
-from utils import is_somehow_readable_for_uid
-
+from IPy import IP
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +22,23 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
         description=description,
         version=version,
         epilog=epilog
+    )
+
+    parser.add_option(
+        '--listen',
+        default='0.0.0.0',
+        help=(
+            'The ip to listen on. At this moment it is only possible to ' +
+            'listen at ipv4 or ipv6 - not both at the same time. This limitation ' +
+            'will go away in one of the next releases. Default: %default'
+        )
+    )
+
+    parser.add_option(
+        '--port',
+        default=5678,
+        type='int',
+        help='The port to listen on. Default: %default'
     )
 
     parser.add_option(
@@ -88,12 +102,12 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
     )
 
     parser.add_option(
-        '--ssl-key-file',
+        '--ssl-key',
         help='The path to the server ssl key file.'
     )
 
     parser.add_option(
-        '--ssl-cert-file',
+        '--ssl-cert',
         help='The path to the server ssl cert file.'
     )
 
@@ -103,11 +117,49 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
     options.user = pwd.getpwnam(options.user).pw_uid
     options.group = grp.getgrnam(options.group).gr_gid
 
+    if not options.listen:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must provide a valid ip address to listen on.\n\n%s\n'
+                %(parser.format_help(),)
+            )
+        )
+    else:
+        try:
+            IP(options.listen)
+        except Exception:
+            parser.exit(
+                status=2,
+                msg=(
+                    '\nERROR: %r is not a valid IP Address.\n\n'
+                    %(options.listen,)
+                )
+            )
+
+    if not options.port:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must provide a valid port to listen on.\n\n%s\n'
+                %(parser.format_help,)
+            )
+        )
+    else:
+        if not options.port in xrange(1, 65536):
+            parser.exit(
+                status=2,
+                msg=(
+                    '\nERROR: Port %r is not in range 1-65535.\n\n'
+                    %(options.port,)
+                )
+            )
+
     if not options.command_file:
         parser.exit(
             status=2,
             msg=(
-                '\nERROR: You must set the path to the nagios/icinga external command file.\n\n %s'
+                '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
                 %(parser.format_help(),)
             )
         )
@@ -115,80 +167,35 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
         if not os.path.exists(options.command_file):
             parser.exit(
                 status=2,
-                msg='No such File: %s.' %(options.command_file)
-            )
-
-        if is_somehow_writeable_for_uid(options.command_file, options.user) is False:
-            parser.exit(
-                status=3,
-                msg='Command File %r is not writable for uid %d' %(options.command_file, options.user)
-            )
-
+                msg='No such File: %s\n' %(options.command_file)
+        )
 
     if not options.ssl_ca_cert:
         parser.exit(
             status=2,
             msg=(
-                '\nERROR: You must set the path to the ssl ca cert.\n\n %s'
+                '\nERROR: You must set the path to the ssl ca cert.\n\n%s\n'
                 %(parser.format_help(),)
-                )
+            )
         )
-#    else:
-#        if not os.path.exists(options.ssl_ca_cert):
-#            parser.exit(
-#                status=3,
-#                msg='No such File: %s.' %(options.ssl_ca_cert)
-#            )
-#
-#        if is_somehow_writeable_for_uid(options.ssl_ca_cert, options.user) is False:
-#            parser.exit(
-#                status=4,
-#                msg='SSL CA File %r is not writable for uid %d' %(options.ssl_ca_cert, options.user)
-#            )
 
-
-    if not options.ssl_key_file:
+    if not options.ssl_key:
         parser.exit(
             status=2,
             msg=(
-                '\nERROR: You must set the path to the server ssl key file.\n\n %s'
+                '\nERROR: You must set the path to the server ssl key file.\n\n%s\n'
                 %(parser.format_help(),)
-                )
+            )
         )
-#    else:
-#        if not os.path.exists(options.ssl_key_file):
-#            parser.exit(
-#                status=3,
-#                msg='No such File: %s.' %(options.ssl_key_file)
-#            )
-#
-#        if is_somehow_readable_for_uid(options.ssl_key_file, options.user) is False:
-#            parser.exit(
-#                status=4,
-#                msg='SSL Key File %r is not readable for uid %d' %(options.ssl_key_file, options.user)
-#            )
 
-
-    if not options.ssl_cert_file:
+    if not options.ssl_cert:
         parser.exit(
             status=2,
             msg=(
-                '\nERROR: You must set the path to the server ssl cert file.\n\n %s'
+                '\nERROR: You must set the path to the server ssl cert file.\n\n%s\n'
                 %(parser.format_help(),)
-                )
+            )
         )
-#    else:
-#        if not os.path.exists(options.ssl_cert_file):
-#            parser.exit(
-#                status=3,
-#                msg='No such File: %s.' %(options.ssl_cert_file)
-#            )
-#
-#        if is_somehow_readable_for_uid(options.ssl_cert_file, options.user) is False:
-#            parser.exit(
-#                status=4,
-#                msg='SSL Cert File %r is not readable for uid %d' %(options.ssl_cert_file, options.user)
-#            )
 
     return options, args
 
@@ -294,9 +301,13 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
     )
 
     parser.add_option(
-        '--path-to-send-nsca',
-        default='/usr/sbin/send_nsca',
-        help='The path to the send_nsca binary. Default: %default'
+        '--ssl-key',
+        help='The path to the client ssl key file.'
+    )
+
+    parser.add_option(
+        '--ssl-cert',
+        help='The path to the client ssl cert file.'
     )
 
     options, args = parser.parse_args()
@@ -304,6 +315,25 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
     options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
     options.user = pwd.getpwnam(options.user).pw_uid
     options.group = grp.getgrnam(options.group).gr_gid
+
+    if not options.ssl_key:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the client ssl key file.\n\n%s\n'
+                %(parser.format_help(),)
+                )
+        )
+
+    if not options.ssl_cert:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the client ssl cert file.\n\n%s\n'
+                %(parser.format_help(),)
+                )
+        )
+
 
     return options, args
 

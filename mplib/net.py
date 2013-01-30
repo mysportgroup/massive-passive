@@ -10,11 +10,9 @@ __version__ = '0.0.1'
 import os
 import sys
 import logging
-from time import time
+import base64
 from OpenSSL import SSL
-from Queue import Empty
 from twisted.internet import ssl
-from twisted.internet import reactor
 from twisted.internet.protocol import Factory
 from twisted.internet.protocol import Protocol
 from twisted.internet.protocol import connectionDone
@@ -22,27 +20,8 @@ from twisted.internet.protocol import ClientFactory
 
 logger = logging.getLogger(__name__)
 
-### PROCESS_HOST_CHECK_RESULT ###
-
-# PROCESS_HOST_CHECK_RESULT;<host_name>;<status_code>;<plugin_output>
-
-# This is used to submit a passive check result for a particular host. The "status_code" indicates
-# the state of the host check and should be one of the following: 0=UP, 1=DOWN, 2=UNREACHABLE.
-# The "plugin_output" argument contains the text returned from the host check, along with optional
-# performance data.
-
-### PROCESS_SERVICE_CHECK_RESULT ###
-
-# PROCESS_SERVICE_CHECK_RESULT;<host_name>;<service_description>;<return_code>;<plugin_output>
-
-# This is used to submit a passive check result for a particular service. The "return_code" field
-# should be one of the following: 0=OK, 1=WARNING, 2=CRITICAL, 3=UNKNOWN. The "plugin_output" field
-# contains text output from the service check, along with optional performance data.
-
-EXTERNAL_COMMAND_FILE = '/var/lib/icinga/rw/icinga.cmd'
-
 class ExternalCommandWriterProtocol(Protocol):
-    def __init__(self, external_command_file):
+    def __init__(self, external_command_file, **kwargs):
         self.external_command_file = external_command_file
         self.logger = logging.getLogger(
             '%s.%s'
@@ -50,13 +29,14 @@ class ExternalCommandWriterProtocol(Protocol):
         )
 
     def dataReceived(self, data):
-        self.logger.debug('Received data from %s: %r', self.transport.getPeer(), data)
-        state = self.writeToCommandFile(data)
+        decoded_data = base64.decodestring(data)
+        self.logger.debug('Received data from %s: %r', self.transport.getPeer(), decoded_data)
+        state = self.writeToCommandFile(decoded_data)
         self.logger.debug(
             'Sending %r to %s.',
             state, self.transport.getPeer()
         )
-        self.transport.write(state)
+        self.transport.write(base64.encodestring(state))
 
     def writeToCommandFile(self, data):
         try:
@@ -68,22 +48,25 @@ class ExternalCommandWriterProtocol(Protocol):
                 self.external_command_file
             )
             self.logger.exception(error)
-            state = 'FAIL %s\n' %(error,)
+            state = 'ERROR %s\n' %(error,)
         else:
             len_data = len(data)
             self.logger.debug(
                 'Written %d bytes to %r',
                 len_data, self.external_command_file
             )
-            state = 'OK %d\n' %(len_data,)
+            state = 'OK %d bytes received and written.\n' %(len_data,)
 
         return state
 
     def connectionLost(self, reason=connectionDone):
         self.logger.info(
             'Connection lost event for %s. Reason: %s',
-            self.transport.getPeer(), reason
+            self.transport.getPeer(), reason.getErrorMessage()
         )
+
+        self.transport.loseConnection()
+        self.transport = None
 
 class ExternalCommandWriterFactory(Factory):
     protocol = ExternalCommandWriterProtocol
@@ -97,7 +80,9 @@ class ExternalCommandWriterFactory(Factory):
 
     def buildProtocol(self, addr):
         self.logger.info('Build protocol for %r', addr)
-        return self.protocol(self.external_command_file)
+        return self.protocol(
+            self.external_command_file,
+        )
 
 
 class SSLCallbacks(object):
@@ -109,7 +94,7 @@ class SSLCallbacks(object):
         
     def verifyCallback(self, connection, x509, errnum, errdepth, ok):
         if not ok:
-            self.logger.info(
+            self.logger.error(
                 'Getting invalid cert from %r: %r. ERRNUM: %r, ERRDEPTH: %r',
                 connection,
                 x509.get_subject(),
@@ -118,99 +103,117 @@ class SSLCallbacks(object):
             )
             return False
         else:
-            self.logger.info(
-                'Received a good cert from %r.',
-                connection
+            self.logger.debug(
+                'Received a valid cert %s.',
+                x509.get_subject()
             )
         return True
 
 ssl_callbacks = SSLCallbacks()
 
-class SSLClientContextFactory(ssl.ClientContextFactory):
-    def __init__(self, certificate_path, privatekey_path):
+
+class SSLServerContextFactory(ssl.DefaultOpenSSLContextFactory):
+    def __init__(
+            self, privateKeyFileName, certificateFileName, caCertificateFilename,
+            sslParanoiaLevel=SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT | SSL.VERIFY_CLIENT_ONCE,
+            checkCallback=None, **kwargs
+    ):
+        ssl.DefaultOpenSSLContextFactory.__init__(self, privateKeyFileName, certificateFileName, **kwargs)
         self.logger = logging.getLogger(
             '%s.%s'
             %(self.__class__.__module__, self.__class__.__name__)
         )
-        self.certificate_path = certificate_path
-        self.privatekey_path = privatekey_path
+        self.caCertificateFileName = caCertificateFilename
+        self.sslParanoiaLevel = sslParanoiaLevel
+        self.checkCallback = checkCallback or ssl_callbacks.verifyCallback
+
+    def buildContext(self):
+        context = self.getContext()
+        context.set_verify(self.sslParanoiaLevel, self.checkCallback)
+        context.load_verify_locations(self.caCertificateFileName)
+        return context
+
+
+class PassiveCheckSubmitProtocol(Protocol):
+    def __init__(self, data):
+        self.data = data
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__class__.__module__, self.__class__.__name__)
+        )
+
+    def connectionMade(self):
+        self.logger.debug(
+            'Successfully made a connection to %r.',
+            self.transport.getPeer()
+        )
+        self.logger.debug('Data to send is: %r', self.data)
+        data = '\n'.join(self.data) + '\n'
+        self.logger.debug('Sending %r to %r.', data, self.transport.getPeer())
+        self.transport.write(base64.encodestring(data))
+        self.logger.info('%d bytes send to %r', len(data), self.transport.getPeer())
+
+    def dataReceived(self, data):
+        decoded_data = base64.decodestring(data)
+        self.logger.debug('Received this message from %r: %r', self.transport.getPeer(), decoded_data)
+        self.logger.debug('Ending connection to %r', self.transport.getPeer())
+        self.transport.loseConnection()
+        self.transport = None
+        self.data = None
+
+class PassiveCheckSubmitFactory(ClientFactory):
+    protocol = PassiveCheckSubmitProtocol
+
+    def __init__(self, data, parent):
+        self.data = data
+        self.parent = parent
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__class__.__module__, self.__class__.__name__)
+        )
+
+    def buildProtocol(self, addr):
+        self.logger.debug('Building Protocol for addr %r and data %r.', addr, self.data)
+        return self.protocol(data=self.data)
+
+    def clientConnectionFailed(self, connector, reason):
+        self.logger.error('Connection to %r failed. Reason: %r', connector.getDestination(), reason)
+        self.parent.executed = True
+        self.parent = None
+        connector = None
+        self.data = None
+
+    def clientConnectionLost(self, connector, reason):
+        self.logger.error('Connection to %r lost. Reason: %r', connector.getDestination(), reason)
+        self.parent.executed = True
+        self.parent = None
+        connector = None
+        self.data = None
+
+    def stopFactory(self):
+        del(self.data)
+        del(self.parent)
+
+
+
+class SSLClientContextFactory(ssl.ClientContextFactory):
+    def __int__(self):
+        self.cert_path = None
+        self.key_path = None
+        self.logger = logging.getLogger(
+            '%s.%s'
+            %(self.__class__.__module__, self.__class__.__name__)
+        )
 
     def getContext(self):
         self.method = SSL.SSLv23_METHOD
         context = ssl.ClientContextFactory.getContext(self)
-        context.use_certificate_file(self.certificate_path)
-        context.use_privatekey_file(self.privatekey_path)
+        context.use_certificate_file(self.cert_path)
+        context.use_privatekey_file(self.key_path)
         return context
 
-
-
-
-
-#if __name__ == '__main__':
-#    factory = Factory()
-#    factory.protocol = ExternalCommandWriter
-
-#    myContextFactory = ssl.DefaultOpenSSLContextFactory(
-#        '/home/real/ssltest/sslCA/private/server-key.pem', '/home/real/ssltest/sslCA/server-cert.pem'
-#    )
-
-#    ctx = myContextFactory.getContext()
-
-#    ctx.set_verify(
-#        SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-#        verifyCallback
-#    )
-
-    # Since we have self-signed certs we have to explicitly
-    # tell the server to trust them.
-#    ctx.load_verify_locations("/home/real/ssltest/sslCA/cacert.pem")
-#    reactor.listenSSL(8000, factory, myContextFactory)
-#    reactor.run()
-
-#testdata = [
-#   'PROCESS_SERVICE_CHECK_RESULT;localhost;testservice;0;Alles ok!|performane_value=5:10',
-#   'PROCESS_SERVICE_CHECK_RESULT;localhost2;testservice;0;Alles ok die zweite!|performane_value=8:10'
-#
-
-#class PassiveCheckSubmitProtocol(Protocol):
-#   def connectionMade(self):
-#       print "connectionMade"
-#       self.transport.write('\n'.join(testdata) + '\n')
-
-#   def dataReceived(self, data):
-#       print "dataReceived: %r" %(data,)
-#       self.transport.loseConnection()
-
-#class PassiveCheckSubmitFactory(ClientFactory):
-#   protocol = PassiveCheckSubmitProtocol
-
-#   def clientConnectionFailed(self, connector, reason):
-#       print "Connection failed - bye! connector => %r, reason => %r" %(connector, reason)
-#       reactor.stop()
-
-#   def clientConnectionLost(self, connector, reason):
-#       print "Connection lost - bye! connector => %r, reason => %r" %(connector, reason)
-#       reactor.stop()
-
-
-#class ContextFactory(ssl.ClientContextFactory):
-#   def getContext(self):
-#       self.method = SSL.SSLv23_METHOD
-#       ctx = ssl.ClientContextFactory.getContext(self)
-#       ctx.use_certificate_file('/home/real/ssltest/sslCA/server-cert.pem')
-#       ctx.use_privatekey_file('/home/real/ssltest/sslCA/private/server-key.pem')
-
-#       # wrong certiticates for testing
-#       #ctx.use_certificate_file('/home/real/ssltest/wrong-client-cert.pem')
-#       #ctx.use_privatekey_file('/home/real/ssltest/wrong-client-key.pem')
-
-#       return ctx
-
-#if __name__ == '__main__':
-#    factory = PassiveCheckSubmitFactory()
-#    reactor.connectSSL('127.0.0.1', 8000, factory, ContextFactory())
-#    reactor.run()
-
+if __name__ == '__main__':
+    pass
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

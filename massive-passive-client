@@ -17,13 +17,15 @@ from mplib import getopts
 from threading import Event
 from mplib.config import ConfigDir
 from mplib.daemon import daemonize
+from twisted.internet import reactor
 from setproctitle import setproctitle
 from mplib.scheduler import ThreadPool
 from mplib.log import BASE_FORMAT_STDOUT
-from mplib.threads import SendNscaWorker
+from mplib.threads import SendNativeWorker
 from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
+
 
 
 
@@ -41,13 +43,15 @@ class Main(object):
         self.stop_event = Event()
         self.send_queue = Queue()
         self._send_worker = send_worker
+        # in_queue, stop_event, ssl_key, ssl_cert, max_wait=1, max_results=10, batch_mode=False
         self.send_worker = self._send_worker(
             self.send_queue,
             self.stop_event,
+            self.options.ssl_key,
+            self.options.ssl_cert,
             max_wait=self.options.batch_wait_time,
             batch_mode=self.options.batch_mode,
-            max_results=self.options.batch_max_items,
-            path_to_send_nsca=self.options.path_to_send_nsca
+            max_results=self.options.batch_max_items
         )
         self._scheduler = scheduler
 
@@ -57,9 +61,11 @@ class Main(object):
         if self.options.foreground is False:
             self.write_pidfile()
         self.logger.info('Startup!')
+
         self.start_send_worker()
         self.start_scheduler()
         self.add_jobs_to_scheduler()
+        reactor.run()
         while not self.stop_event.is_set():
             sleep(0.1)
 
@@ -180,6 +186,8 @@ class Main(object):
         self.logger.info('Going down now ...')
         self.stop_event.set()
         self.logger.debug('Stop Event set.')
+        self.logger.debug('Stopping reactor ...')
+        reactor.stop()
         self.stop_scheduler()
         self.stop_send_worker()
 
@@ -205,7 +213,7 @@ if __name__ == '__main__':
     if options.foreground is False:
         daemonize(cwd='/')
 
-    main = Main(sys.argv[0], options, SendNscaWorker, MassivePassiveScheduler)
+    main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
     main.drop_rights()
 
     filehandler = WatchedFileHandler(options.logfile)

@@ -11,20 +11,18 @@ import os
 import sys
 import signal
 import logging
-from time import sleep
 from mplib import getopts
 from threading import Event
 from mplib.daemon import daemonize
+from twisted.internet import reactor
 from setproctitle import setproctitle
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.log import set_logfile_permissions
+from mplib.net import SSLServerContextFactory
 from logging.handlers import WatchedFileHandler
-
-
+from mplib.net import ExternalCommandWriterFactory
 
 logger = logging.getLogger(__name__)
-
-
 
 class Main(object):
     def __init__(self, name, options):
@@ -38,16 +36,31 @@ class Main(object):
         )
         self.options = options
         self.stop_event = Event()
+        self.factory = ExternalCommandWriterFactory(
+            self.options.command_file,
+        )
+        self.ssl_factory = SSLServerContextFactory(
+            self.options.ssl_key, self.options.ssl_cert, self.options.ssl_ca_cert
+        )
 
 
     def run(self):
+        self.logger.info('Startup!')
         self.set_proc_title()
         self.drop_rights()
         if self.options.foreground is False:
             self.write_pidfile()
-        self.logger.info('Startup!')
-        while not self.stop_event.is_set():
-            sleep(0.1)
+        context = self.ssl_factory.buildContext()
+
+        reactor.listenSSL(
+            self.options.port,
+            self.factory,
+            self.ssl_factory,
+            interface=self.options.listen
+        )
+        reactor.run()
+        #while not self.stop_event.is_set():
+        #    sleep(0.1)
 
     def set_proc_title(self):
         setproctitle(
@@ -100,6 +113,8 @@ class Main(object):
         self.logger.info('Going down now ...')
         self.stop_event.set()
         self.logger.debug('Stop Event set.')
+        self.logger.debug('Stopping reactor ...')
+        reactor.stop()
 
         if self.options.foreground is False:
             self.logger.debug('Removing pidfile at %r', self.options.pidfile)
@@ -109,28 +124,6 @@ class Main(object):
                 self.logger.debug('Ignoring error while unlinking pidfile.')
                 self.logger.exception(error)
         self.logger.info('Exiting now!')
-
-
-    #if __name__ == '__main__':
-    #    factory = Factory()
-    #    factory.protocol = ExternalCommandWriter
-
-    #    myContextFactory = ssl.DefaultOpenSSLContextFactory(
-    #        '/home/real/ssltest/sslCA/private/server-key.pem', '/home/real/ssltest/sslCA/server-cert.pem'
-    #    )
-
-    #    ctx = myContextFactory.getContext()
-
-    #    ctx.set_verify(
-    #        SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-    #        verifyCallback
-    #    )
-
-    # Since we have self-signed certs we have to explicitly
-    # tell the server to trust them.
-#    ctx.load_verify_locations("/home/real/ssltest/sslCA/cacert.pem")
-#    reactor.listenSSL(8000, factory, myContextFactory)
-#    reactor.run()
 
 
 if __name__ == '__main__':
