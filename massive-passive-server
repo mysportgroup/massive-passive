@@ -18,11 +18,13 @@ from twisted.internet import reactor
 from setproctitle import setproctitle
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.log import set_logfile_permissions
-from mplib.net import SSLServerContextFactory
 from logging.handlers import WatchedFileHandler
-from mplib.net import ExternalCommandWriterFactory
+from mplib.net.server import SSLServerContextFactory
+from mplib.net.server import ExternalCommandWriterFactory
+
 
 logger = logging.getLogger(__name__)
+
 
 class Main(object):
     def __init__(self, name, options):
@@ -59,8 +61,6 @@ class Main(object):
             interface=self.options.listen
         )
         reactor.run()
-        #while not self.stop_event.is_set():
-        #    sleep(0.1)
 
     def set_proc_title(self):
         setproctitle(
@@ -156,7 +156,4 @@ if __name__ == '__main__':
     main.start()
     sys.exit(0)
 
-
-
-
-    # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

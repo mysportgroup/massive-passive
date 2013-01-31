@@ -310,6 +310,11 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
         help='The path to the client ssl cert file.'
     )
 
+    parser.add_option(
+        '--ssl-ca-cert',
+        help='The path to the ssl ca cert file.'
+    )
+
     options, args = parser.parse_args()
 
     options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
@@ -334,6 +339,14 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
                 )
         )
 
+    if not options.ssl_ca_cert:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the ssl ca cert file.\n\n%s\n'
+                %(parser.format_help(),)
+                )
+        )
 
     return options, args
 

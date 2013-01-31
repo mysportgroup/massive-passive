@@ -7,8 +7,6 @@ __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
 __version__ = '0.0.1'
 
-import os
-import sys
 import logging
 import base64
 from OpenSSL import SSL
@@ -16,7 +14,7 @@ from twisted.internet import ssl
 from twisted.internet.protocol import Factory
 from twisted.internet.protocol import Protocol
 from twisted.internet.protocol import connectionDone
-from twisted.internet.protocol import ClientFactory
+
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +68,7 @@ class ExternalCommandWriterProtocol(Protocol):
 
 class ExternalCommandWriterFactory(Factory):
     protocol = ExternalCommandWriterProtocol
-    
+
     def __init__(self, external_command_file):
         self.external_command_file = external_command_file
         self.logger = logging.getLogger(
@@ -91,7 +89,7 @@ class SSLCallbacks(object):
             '%s.%s'
             %(self.__class__.__module__, self.__class__.__name__)
         )
-        
+
     def verifyCallback(self, connection, x509, errnum, errdepth, ok):
         if not ok:
             self.logger.error(
@@ -134,86 +132,8 @@ class SSLServerContextFactory(ssl.DefaultOpenSSLContextFactory):
         return context
 
 
-class PassiveCheckSubmitProtocol(Protocol):
-    def __init__(self, data):
-        self.data = data
-        self.logger = logging.getLogger(
-            '%s.%s'
-            %(self.__class__.__module__, self.__class__.__name__)
-        )
-
-    def connectionMade(self):
-        self.logger.debug(
-            'Successfully made a connection to %r.',
-            self.transport.getPeer()
-        )
-        self.logger.debug('Data to send is: %r', self.data)
-        data = '\n'.join(self.data) + '\n'
-        self.logger.debug('Sending %r to %r.', data, self.transport.getPeer())
-        self.transport.write(base64.encodestring(data))
-        self.logger.info('%d bytes send to %r', len(data), self.transport.getPeer())
-
-    def dataReceived(self, data):
-        decoded_data = base64.decodestring(data)
-        self.logger.debug('Received this message from %r: %r', self.transport.getPeer(), decoded_data)
-        self.logger.debug('Ending connection to %r', self.transport.getPeer())
-        self.transport.loseConnection()
-        self.transport = None
-        self.data = None
-
-class PassiveCheckSubmitFactory(ClientFactory):
-    protocol = PassiveCheckSubmitProtocol
-
-    def __init__(self, data, parent):
-        self.data = data
-        self.parent = parent
-        self.logger = logging.getLogger(
-            '%s.%s'
-            %(self.__class__.__module__, self.__class__.__name__)
-        )
-
-    def buildProtocol(self, addr):
-        self.logger.debug('Building Protocol for addr %r and data %r.', addr, self.data)
-        return self.protocol(data=self.data)
-
-    def clientConnectionFailed(self, connector, reason):
-        self.logger.error('Connection to %r failed. Reason: %r', connector.getDestination(), reason)
-        self.parent.executed = True
-        self.parent = None
-        connector = None
-        self.data = None
-
-    def clientConnectionLost(self, connector, reason):
-        self.logger.error('Connection to %r lost. Reason: %r', connector.getDestination(), reason)
-        self.parent.executed = True
-        self.parent = None
-        connector = None
-        self.data = None
-
-    def stopFactory(self):
-        del(self.data)
-        del(self.parent)
-
-
-
-class SSLClientContextFactory(ssl.ClientContextFactory):
-    def __int__(self):
-        self.cert_path = None
-        self.key_path = None
-        self.logger = logging.getLogger(
-            '%s.%s'
-            %(self.__class__.__module__, self.__class__.__name__)
-        )
-
-    def getContext(self):
-        self.method = SSL.SSLv23_METHOD
-        context = ssl.ClientContextFactory.getContext(self)
-        context.use_certificate_file(self.cert_path)
-        context.use_privatekey_file(self.key_path)
-        return context
-
 if __name__ == '__main__':
     pass
 
 
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+    # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
