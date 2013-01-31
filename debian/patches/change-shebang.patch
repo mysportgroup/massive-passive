@@ -1,0 +1,72 @@
+--- a/massive-passive
++++ b/massive-passive
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/__init__.py
++++ b/mplib/__init__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/cmd.py
++++ b/mplib/cmd.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/config.py
++++ b/mplib/config.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/daemon.py
++++ b/mplib/daemon.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/getopts.py
++++ b/mplib/getopts.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/log.py
++++ b/mplib/log.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/scheduler.py
++++ b/mplib/scheduler.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/threads.py
++++ b/mplib/threads.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
