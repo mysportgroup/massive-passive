@@ -1,0 +1,9 @@
+/var/log/massive-passive/*server.log {
+    daily
+    missingok
+    rotate 5
+    start 0
+    size 100M
+    compress
+    create 0640 nagios nagios
+}

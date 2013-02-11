@@ -7,29 +7,73 @@ Vcs-git: git://github.com/mysportgroup/massive-passive.git
 Vcs-Browser: https://github.com/mysportgroup/massive-passive
 Standards-Version: 3.9.1
 
-Package: massive-passive
+Package: massive-passive-client
 Architecture: all
-Depends: ${python:Depends}, python-massive-passive (=${source:Version}), adduser, nsca
+Depends: ${python:Depends}, python-massive-passive-client (=${source:Version}), adduser
 Suggests: nagios-plugins-basic, nagios-plugins-standard, nagios-plugins, nagios-plugins-contrib, nagios-plugins-common
-Description: A scheduler for passive nagios/icinga checks.
+Replaces: massive-passive (<< 0.3.0)
+Conflicts: massive-passive (<< 0.3.0)
+Description: a scheduler for passive nagios/icinga checks.
  A scheduler for passive nagios/icinga checks.
  massive-passive is a simple scheduler for passive nagios/icinga checks.
- At the moment it uses send_nsca for sending data to nagios/icinga (other 
- methods are planned, like stuff from mod_gearman (send_gearman?), a own
- listener and maybe even delivery via cgi (if someone needs this).
+ The client executes the checks and sends the results to the server.
+ The connection channel is secured via SSL cert auth.
  .
- This is the binary package for massive-passive
+ This is the binary package for the massive-passive-client
 
-Package: python-massive-passive
+Package: massive-passive-server
+Architecture: all
+Depends: ${python:Depends}, python-massive-passive-server (=${source:Version}), adduser
+Suggests: nagios-plugins-basic, nagios-plugins-standard, nagios-plugins, nagios-plugins-contrib, nagios-plugins-common
+Replaces: massive-passive (<< 0.3.0)
+Conflicts: massive-passive (<< 0.3.0)
+Description: a scheduler for passive nagios/icinga checks.
+ A scheduler for passive nagios/icinga checks.
+ massive-passive is a simple scheduler for passive nagios/icinga checks.
+ The server receives the check results from the client and injects them into
+ icinga/nagios via the external command pipe.
+ .
+ This is the binary package for the massive-passive-server
+
+Package: python-massive-passive-base
 Architecture: all
 Depends: ${python:Depends}, python-apscheduler, python-setproctitle
 Recommends: python-simplejson
+Replaces: python-massive-passive (<< 0.3.0)
+Conflicts: python-massive-passive (<< 0.3.0)
 Provides: ${python:Provides}
-Description: A scheduler for passive nagios/icinga checks.
+Description: the base library package for massive-passive client and server.
  A scheduler for passive nagios/icinga checks.
  massive-passive is a simple scheduler for passive nagios/icinga checks.
- At the moment it uses send_nsca for sending data to nagios/icinga (other 
- methods are planned, like stuff from mod_gearman (send_gearman?), a own
- listener and maybe even delivery via cgi (if someone needs this).
+ This is the base massive-passive library the client and the server packages
+ uses to work together. Those library package includes everything both, the server
+ and the client needs to run.
  .
- This is the library package for massive-passive
+ This is the base library package for massive-passive client and server
+
+Package: python-massive-passive-client
+Architecture: all
+Depends: ${python:Depends}, python-massive-passive-base (=${source:Version})
+Recommends: python-simplejson
+Provides: ${python:Provides}
+Description: the library package for massive-passive-client.
+ A scheduler for passive nagios/icinga checks.
+ massive-passive is a simple scheduler for passive nagios/icinga checks.
+ This is the massive-passive client library the client packages
+ uses to work. This library package includes everything the client needs to run.
+ .
+ This is the library package for massive-passive-client
+
+Package: python-massive-passive-server
+Architecture: all
+Depends: ${python:Depends}, python-twisted, python-openssl, python-massive-passive-base (=${source:Version})
+Recommends: python-simplejson
+Provides: ${python:Provides}
+Description: the library package for massive-passive-server.
+ A scheduler for passive nagios/icinga checks.
+ massive-passive is a simple scheduler for passive nagios/icinga checks.
+ This is the massive-passive server library the server packages
+ uses to work. This library package includes everything the server
+ needs to run.
+ .
+ This is the library package for massive-passive-server

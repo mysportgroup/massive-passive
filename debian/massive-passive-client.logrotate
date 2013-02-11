@@ -1,4 +1,4 @@
-/var/log/massive-passive/*.log {
+/var/log/massive-passive/*client.log {
     daily
     missingok
     rotate 5

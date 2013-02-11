@@ -8,6 +8,15 @@ override_dh_auto_install:
 	rm -rf -- debian/python-massive-passive/usr/sbin
 	rm -f -- debian/python-massive-passive/usr/share/python-massive-passive/*.txt
 	rm -rf -- debian/python-massive-passive/etc
+	rm -rf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net
+	rm -rf -- debian/python-massive-passive-client/usr/share/pyshared/mplib/net/server.py*
+	rm -rf -- debian/python-massive-passive-client/etc/init.d/massive-passive-server
+	rm -rf -- debian/python-massive-passive-client/etc/default/massive-passive-server
+	rm -rf -- debian/python-massive-passive-client/usr/share/pyshared/mplib/net/server.py*
+	rm -rf -- debian/python-massive-passive-server/usr/share/pyshared/mplib/net/client.py*
+	rm -rf -- debian/python-massive-passive-server/etc/init.d/massive-passive-client
+	rm -rf -- debian/python-massive-passive-server/etc/default/massive-passive-client
+
 override_dh_auto_build:
 
 override_dh_python2:
