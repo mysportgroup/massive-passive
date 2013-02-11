@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.2.13'
+__version__ = '0.3.0'
 
 import os
 import sys
@@ -20,7 +20,7 @@ from mplib.daemon import daemonize
 from setproctitle import setproctitle
 from mplib.scheduler import ThreadPool
 from mplib.log import BASE_FORMAT_STDOUT
-from mplib.threads import SendNscaWorker
+from mplib.threads import SendNativeWorker
 from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
@@ -44,10 +44,12 @@ class Main(object):
         self.send_worker = self._send_worker(
             self.send_queue,
             self.stop_event,
+            self.options.ssl_key,
+            self.options.ssl_cert,
+            self.options.ssl_ca_cert,
             max_wait=self.options.batch_wait_time,
             batch_mode=self.options.batch_mode,
-            max_results=self.options.batch_max_items,
-            path_to_send_nsca=self.options.path_to_send_nsca
+            max_results=self.options.batch_max_items
         )
         self._scheduler = scheduler
 
@@ -193,9 +195,9 @@ class Main(object):
         self.logger.info('Exiting now!')
 
 if __name__ == '__main__':
-    options, args = getopts.getopt(
+    options, args = getopts.client_getopt(
         version='%prog ' + __version__,
-        description=getopts.get_description(),
+        description=getopts.get_client_description(),
         epilog=getopts.get_gpl3_text()
     )
 
@@ -205,7 +207,7 @@ if __name__ == '__main__':
     if options.foreground is False:
         daemonize(cwd='/')
 
-    main = Main(sys.argv[0], options, SendNscaWorker, MassivePassiveScheduler)
+    main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
     main.drop_rights()
 
     filehandler = WatchedFileHandler(options.logfile)

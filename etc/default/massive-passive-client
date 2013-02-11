@@ -7,14 +7,14 @@
 #
 
 LOGLEVEL="info"
-PIDFILE="/tmp/massive-passive.pid"
+PIDFILE="/tmp/massive-passive-client.pid"
 CONFDIR="/etc/massive-passive/checks.d"
 USER="nobody"
 GROUP="nogroup"
 BATCH_WAIT_TIME="2"
 BATCH_MAX_ITEMS="10"
 INITIAL_RANDOM_WAIT_RANGE="10"
-LOGFILE="/tmp/massive-passive.log"
+LOGFILE="/tmp/massive-passive-client.log"
 PATH_TO_SEND_NSCA="/usr/sbin/send_nsca"
 
 

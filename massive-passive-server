@@ -1,0 +1,159 @@
+#!/usr/bin/python2.6
+# -*- coding: utf-8 -*-
+
+__author__ = 'Robin Wittler'
+__contact__ = 'r.wittler@mysportgroup.de'
+__license__ = 'GPL3+'
+__copyright__ = '(c) 2013 by mysportgroup.de'
+__version__ = '0.0.1'
+
+import os
+import sys
+import signal
+import logging
+from mplib import getopts
+from threading import Event
+from mplib.daemon import daemonize
+from twisted.internet import reactor
+from setproctitle import setproctitle
+from mplib.log import BASE_FORMAT_STDOUT
+from mplib.log import set_logfile_permissions
+from logging.handlers import WatchedFileHandler
+from mplib.net.server import SSLServerContextFactory
+from mplib.net.server import ExternalCommandWriterFactory
+
+
+logger = logging.getLogger(__name__)
+
+
+class Main(object):
+    def __init__(self, name, options):
+        super(Main, self).__init__()
+        self.name = name
+        self.logger = logging.getLogger(
+            '%s.%s' %(
+                self.name,
+                self.__class__.__name__
+                )
+        )
+        self.options = options
+        self.stop_event = Event()
+        self.factory = ExternalCommandWriterFactory(
+            self.options.command_file,
+        )
+        self.ssl_factory = SSLServerContextFactory(
+            self.options.ssl_key, self.options.ssl_cert, self.options.ssl_ca_cert
+        )
+
+
+    def run(self):
+        self.logger.info('Startup!')
+        self.set_proc_title()
+        self.drop_rights()
+        if self.options.foreground is False:
+            self.write_pidfile()
+        context = self.ssl_factory.buildContext()
+
+        reactor.listenSSL(
+            self.options.port,
+            self.factory,
+            self.ssl_factory,
+            interface=self.options.listen
+        )
+        reactor.run()
+
+    def set_proc_title(self):
+        setproctitle(
+            '%s %s' %(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))
+        )
+
+    def write_pidfile(self):
+        pid = os.getpid()
+        pidfile_fd = os.open(
+            self.options.pidfile,
+            os.O_CREAT | os.O_EXCL | os.O_RDWR,
+            0640
+        )
+        pidfile = os.fdopen(pidfile_fd, 'w+')
+        pidfile.write('%s\n' %(pid,))
+        pidfile.flush()
+        os.close(pidfile_fd)
+
+    def drop_rights(self):
+        current_uid = os.getuid()
+        current_gid = os.getgid()
+
+        if not options.group == current_gid:
+            self.logger.debug('Switching group to %r', options.group)
+            os.setgid(options.group)
+            os.setegid(options.group)
+
+        if not options.user == current_uid:
+            self.logger.debug('Switching user to %r', options.user)
+            os.setuid(options.user)
+            os.seteuid(options.user)
+
+    def start(self):
+        try:
+            self.run()
+        except Exception as error:
+            self.logger.exception(error)
+            self.logger.info('Emitting stop signal ...')
+            os.kill(os.getpid(), signal.SIGTERM)
+
+
+    def config_reload(self, signum, sigframe):
+        self.logger.info(
+            'Received Signal %s ... reloading config now ...', signum
+        )
+        self.logger.info('Config reload done.')
+
+    def shutdown(self, signum, sigframe):
+        self.logger.info('Received Signal %s.', signum)
+        self.logger.info('Going down now ...')
+        self.stop_event.set()
+        self.logger.debug('Stop Event set.')
+        self.logger.debug('Stopping reactor ...')
+        reactor.stop()
+
+        if self.options.foreground is False:
+            self.logger.debug('Removing pidfile at %r', self.options.pidfile)
+            try:
+                os.unlink(self.options.pidfile)
+            except OSError as error:
+                self.logger.debug('Ignoring error while unlinking pidfile.')
+                self.logger.exception(error)
+        self.logger.info('Exiting now!')
+
+
+if __name__ == '__main__':
+    options, args = getopts.server_getopt(
+        version='%prog ' + __version__,
+        description=getopts.get_server_description(),
+        epilog=getopts.get_gpl3_text()
+    )
+
+    logging.basicConfig(level=options.loglevel, format=BASE_FORMAT_STDOUT)
+    root_logger = logging.getLogger('')
+
+    if options.foreground is False:
+        daemonize(cwd='/')
+
+    main = Main(sys.argv[0], options)
+    main.drop_rights()
+
+    filehandler = WatchedFileHandler(options.logfile)
+    filehandler.setLevel(options.loglevel)
+    filehandler_formatter = logging.Formatter(BASE_FORMAT_STDOUT)
+    filehandler.setFormatter(filehandler_formatter)
+    root_logger.addHandler(filehandler)
+    root_logger.setLevel(options.loglevel)
+    set_logfile_permissions(options.logfile)
+
+    signal.signal(signal.SIGTERM, main.shutdown)
+    signal.signal(signal.SIGINT, main.shutdown)
+    signal.signal(signal.SIGHUP, main.config_reload)
+    main.start()
+    sys.exit(0)
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
