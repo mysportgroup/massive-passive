@@ -64,7 +64,7 @@ class Main(object):
 
     def set_proc_title(self):
         setproctitle(
-            '%s %s' %(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))
+            '%s %s' %(sys.argv[0], ' '.join(sys.argv[1:]))
         )
 
     def write_pidfile(self):

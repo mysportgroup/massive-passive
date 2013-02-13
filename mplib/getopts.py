@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.5'
+__version__ = '0.1.0'
 
 import os
 import pwd
@@ -93,22 +93,32 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
     parser.add_option(
         '--command-file',
         #default='/var/lib/icinga/rw/icinga.cmd'
-        help='The path to the nagios/icinga external command file.'
+        help=(
+            'The path to the nagios/icinga external command file. ' +
+            'If not set, it defaults to one of /var/lib/icinga/rw/icinga.cmd or ' +
+            '/var/lib/nagios/rw/nagios.cmd - depending which of them exists.'
+        )
     )
+
+    command_file_option = parser.get_option('--command-file')
+    command_file_option.defaults = ('/var/lib/icinga/rw/icinga.cmd', '/var/lib/nagios/rw/nagios.cmd')
 
     parser.add_option(
         '--ssl-ca-cert',
-        help='The path to the ssl ca cert.'
+        default='/etc/massive-passive/massive-passive-ssl-ca.cert',
+        help='The path to the ssl ca cert. Default: %default'
     )
 
     parser.add_option(
         '--ssl-key',
-        help='The path to the server ssl key file.'
+        default='/etc/massive-passive/massive-passive-server-ssl.key',
+        help='The path to the server ssl key file. Default: %default'
     )
 
     parser.add_option(
         '--ssl-cert',
-        help='The path to the server ssl cert file.'
+        default='/etc/massive-passive/massive-passive-server-ssl.cert',
+        help='The path to the server ssl cert file. Default: %default'
     )
 
     options, args = parser.parse_args()
@@ -156,13 +166,18 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
             )
 
     if not options.command_file:
-        parser.exit(
-            status=2,
-            msg=(
-                '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
-                %(parser.format_help(),)
+        for path in options.command_file.defaults:
+            if os.path.exists(path):
+                options.command_file = path
+                break
+        else:
+            parser.exit(
+                status=2,
+                msg=(
+                    '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
+                    %(parser.format_help(),)
+                )
             )
-        )
     else:
         if not os.path.exists(options.command_file):
             parser.exit(
@@ -178,6 +193,13 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
                 %(parser.format_help(),)
             )
         )
+    else:
+        if not os.path.exists(options.ssl_ca_cert):
+            parser.exit(
+                status=2,
+                msg='No such File: %s\n' %(options.ssl_ca_cert)
+            )
+
 
     if not options.ssl_key:
         parser.exit(
@@ -187,6 +209,12 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
                 %(parser.format_help(),)
             )
         )
+    else:
+        if not os.path.exists(options.ssl_key):
+            parser.exit(
+                status=2,
+                msg='No such File: %s\n' %(options.ssl_key)
+            )
 
     if not options.ssl_cert:
         parser.exit(
@@ -196,6 +224,12 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
                 %(parser.format_help(),)
             )
         )
+    else:
+        if not os.path.exists(options.ssl_cert):
+            parser.exit(
+                status=2,
+                msg='No such File: %s\n' %(options.ssl_cert)
+            )
 
     return options, args
 
@@ -259,7 +293,7 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
 
     parser.add_option(
         '--batch-max-items',
-        default=10,
+        default=100,
         type='int',
         help=(
             'How much items to use in batch mode. ' +
@@ -302,17 +336,20 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
 
     parser.add_option(
         '--ssl-key',
-        help='The path to the client ssl key file.'
+        default='/etc/massive-passive/massive-passive-client-ssl.key',
+        help='The path to the client ssl key file. Default: %default'
     )
 
     parser.add_option(
         '--ssl-cert',
-        help='The path to the client ssl cert file.'
+        default='/etc/massive-passive/massive-passive-client-ssl.cert',
+        help='The path to the client ssl cert file. Default: %default'
     )
 
     parser.add_option(
         '--ssl-ca-cert',
-        help='The path to the ssl ca cert file.'
+        default='/etc/massive-passive/massive-passive-ssl-ca.cert',
+        help='The path to the ssl ca cert file. Default: %default'
     )
 
     options, args = parser.parse_args()
@@ -329,6 +366,12 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
                 %(parser.format_help(),)
                 )
         )
+    else:
+        if not os.path.exists(options.ssl_key):
+            parser.exit(
+                status=2,
+                msg='No such File: %s\n' %(options.ssl_key)
+            )
 
     if not options.ssl_cert:
         parser.exit(
@@ -338,6 +381,12 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
                 %(parser.format_help(),)
                 )
         )
+    else:
+        if not os.path.exists(options.ssl_cert):
+            parser.exit(
+                status=2,
+                msg='No such File: %s\n' %(options.ssl_cert)
+            )
 
     if not options.ssl_ca_cert:
         parser.exit(
@@ -347,6 +396,12 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
                 %(parser.format_help(),)
                 )
         )
+    else:
+        if not os.path.exists(options.ssl_ca_cert):
+            parser.exit(
+                status=2,
+                msg='No such File: %s\n' %(options.ssl_ca_cert)
+            )
 
     return options, args
 
