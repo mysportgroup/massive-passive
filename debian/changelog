@@ -1,3 +1,9 @@
+massive-passive (0.3.0-1) stable; urgency=low
+
+  * add new upstream version 0.3.0
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Mon, 11 Feb 2013 16:57:17 +0100
+
 massive-passive (0.2.13-2) stable; urgency=low
 
   * add python2.7 to supported versions ;)

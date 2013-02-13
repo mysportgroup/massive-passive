@@ -3,3 +3,4 @@ apscheduler python-apscheduler
 setproctitle python-setproctitle
 Twisted python-twisted
 pyOpenSSL python-openssl
+IPy python-ipy

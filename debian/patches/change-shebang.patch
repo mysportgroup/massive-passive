@@ -1,11 +1,26 @@
---- a/massive-passive
-+++ b/massive-passive
+--- a/massive-passive-client
++++ b/massive-passive-client
 @@ -1,4 +1,4 @@
 -#!/usr/bin/python2.6
 +#!/usr/bin/python
  # -*- coding: utf-8 -*-
  
  __author__ = 'Robin Wittler'
+--- a/massive-passive-server
++++ b/massive-passive-server
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+@@ -156,4 +156,4 @@
+     main.start()
+     sys.exit(0)
+ 
+-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+\ No newline at end of file
++# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 --- a/mplib/__init__.py
 +++ b/mplib/__init__.py
 @@ -1,4 +1,4 @@
@@ -48,6 +63,30 @@
  __author__ = 'Robin Wittler'
 --- a/mplib/log.py
 +++ b/mplib/log.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/net/__init__.py
++++ b/mplib/net/__init__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/net/client.py
++++ b/mplib/net/client.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2.6
++#!/usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ __author__ = 'Robin Wittler'
+--- a/mplib/net/server.py
++++ b/mplib/net/server.py
 @@ -1,4 +1,4 @@
 -#!/usr/bin/python2.6
 +#!/usr/bin/python

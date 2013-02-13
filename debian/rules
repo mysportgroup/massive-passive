@@ -4,18 +4,24 @@
 	dh $@ --with python2 --buildsystem=python_distutils
 
 override_dh_auto_install:
-	python setup.py install --root=debian/python-massive-passive --install-layout=deb 
-	rm -rf -- debian/python-massive-passive/usr/sbin
-	rm -f -- debian/python-massive-passive/usr/share/python-massive-passive/*.txt
-	rm -rf -- debian/python-massive-passive/etc
-	rm -rf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net
-	rm -rf -- debian/python-massive-passive-client/usr/share/pyshared/mplib/net/server.py*
-	rm -rf -- debian/python-massive-passive-client/etc/init.d/massive-passive-server
-	rm -rf -- debian/python-massive-passive-client/etc/default/massive-passive-server
-	rm -rf -- debian/python-massive-passive-client/usr/share/pyshared/mplib/net/server.py*
-	rm -rf -- debian/python-massive-passive-server/usr/share/pyshared/mplib/net/client.py*
-	rm -rf -- debian/python-massive-passive-server/etc/init.d/massive-passive-client
-	rm -rf -- debian/python-massive-passive-server/etc/default/massive-passive-client
+	python setup.py install --root=debian/python-massive-passive-base --install-layout=deb 
+	rm -rvf -- debian/python-massive-passive-base/usr/sbin
+	rm -rvf -- debian/python-massive-passive-base/etc
+	mkdir -p debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/net
+	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/net/client.py \
+	    debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/net
+	mkdir -p debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/net
+	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/net/server.py \
+	    debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/net
+	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/client.py
+	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/server.py
+	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/net/client.py
+	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/net/server.py
+	rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-client
+	rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-server
+	find debian/python-massive-passive-base/usr -type f -name "requires.txt" -print0 | xargs -0 sed -i \
+	    -e "s/Twisted//" \
+	    -e "s/pyOpenSSL//"
 
 override_dh_auto_build:
 
