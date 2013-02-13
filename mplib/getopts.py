@@ -100,9 +100,6 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
         )
     )
 
-    command_file_option = parser.get_option('--command-file')
-    command_file_option.defaults = ('/var/lib/icinga/rw/icinga.cmd', '/var/lib/nagios/rw/nagios.cmd')
-
     parser.add_option(
         '--ssl-ca-cert',
         default='/etc/massive-passive/massive-passive-ssl-ca.cert',
@@ -123,6 +120,7 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
 
     options, args = parser.parse_args()
 
+    options.command_file_defaults = ('/var/lib/icinga/rw/icinga.cmd', '/var/lib/nagios/rw/nagios.cmd')
     options.loglevel = getattr(logging, options.loglevel.upper(), logging.INFO)
     options.user = pwd.getpwnam(options.user).pw_uid
     options.group = grp.getgrnam(options.group).gr_gid
@@ -166,7 +164,7 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
             )
 
     if not options.command_file:
-        for path in options.command_file.defaults:
+        for path in options.command_file_defaults:
             if os.path.exists(path):
                 options.command_file = path
                 break

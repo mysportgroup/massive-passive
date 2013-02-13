@@ -226,16 +226,17 @@ class SendNativeWorker(Thread):
 
         if check_type == 'host_check':
             ### PROCESS_HOST_CHECK_RESULT ###
-            # PROCESS_HOST_CHECK_RESULT;<host_name>;<status_code>;<plugin_output>
-            return 'PROCESS_HOST_CHECK_RESULT;%s%s%s%s%s' %(
-                check_hostname, delim, check_returncode, delim, check_msg
+            # [time] PROCESS_HOST_CHECK_RESULT;<host_name>;<status_code>;<plugin_output>
+            return '[%d] PROCESS_HOST_CHECK_RESULT;%s%s%s%s%s' %(
+                time(), check_hostname, delim, check_returncode, delim, check_msg
                 )
 
         if check_type == 'service_check':
             ### PROCESS_SERVICE_CHECK_RESULT ###
-            # PROCESS_SERVICE_CHECK_RESULT;<host_name>;<service_description>;<return_code>;<plugin_output>
+            # [time] PROCESS_SERVICE_CHECK_RESULT;<host_name>;<service_description>;<return_code>;<plugin_output>
             check_description = result['check_description']
-            return 'PROCESS_SERVICE_CHECK_RESULT;%s%s%s%s%s%s%s' %(
+            return '[%d] PROCESS_SERVICE_CHECK_RESULT;%s%s%s%s%s%s%s' %(
+                time(),
                 check_hostname,
                 delim,
                 check_description,
