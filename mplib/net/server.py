@@ -7,6 +7,7 @@ __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
 __version__ = '0.0.1'
 
+import os
 import logging
 import base64
 from OpenSSL import SSL
@@ -19,8 +20,9 @@ from twisted.internet.protocol import connectionDone
 logger = logging.getLogger(__name__)
 
 class ExternalCommandWriterProtocol(Protocol):
-    def __init__(self, external_command_file, **kwargs):
+    def __init__(self, external_command_file, batch_mode=True, **kwargs):
         self.external_command_file = external_command_file
+        self.batch_mode = batch_mode
         self.logger = logging.getLogger(
             '%s.%s'
             %(self.__class__.__module__, self.__class__.__name__)
@@ -36,25 +38,38 @@ class ExternalCommandWriterProtocol(Protocol):
         )
         self.transport.write(base64.encodestring(state))
 
+
     def writeToCommandFile(self, data):
-        try:
-            with open(self.external_command_file, 'w') as fh:
-                fh.write(data)
-        except Exception as error:
+        if not os.path.exists(self.external_command_file):
             self.logger.error(
-                'There was an error while writing data to %r',
+                'External command file at %r does not exists. Is icinga/nagios running?',
                 self.external_command_file
             )
-            self.logger.exception(error)
-            state = 'ERROR %s\n' %(error,)
+            state = 'ERROR Could not write to external command file.\n'
         else:
-            len_data = len(data)
-            self.logger.debug(
-                'Written %d bytes to %r',
-                len_data, self.external_command_file
-            )
-            state = 'OK %d bytes received and written.\n' %(len_data,)
-
+            try:
+                with open(self.external_command_file, 'w') as fh:
+                    if self.batch_mode:
+                        fh.write(data)
+                        fh.flush()
+                    else:
+                        for line in data.split('\n'):
+                            fh.write(line + '\n')
+                            fh.flush()
+            except Exception as error:
+                self.logger.error(
+                    'There was an error while writing data to %r',
+                    self.external_command_file
+                )
+                self.logger.exception(error)
+                state = 'ERROR %s\n' %(error,)
+            else:
+                len_data = len(data)
+                self.logger.debug(
+                    'Written %d bytes to %r',
+                    len_data, self.external_command_file
+                )
+                state = 'OK %d bytes received and written.\n' %(len_data,)
         return state
 
     def connectionLost(self, reason=connectionDone):
