@@ -118,6 +118,15 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
         help='The path to the server ssl cert file. Default: %default'
     )
 
+    parser.add_option(
+        '--allowed-client-cert-dir',
+        default='/etc/massive-passive/allowed-client-cert.d',
+        help=(
+            'Only Client with valid certificates in this dir are allowed to ' +
+            'send results. Default: %default'
+        )
+    )
+
     options, args = parser.parse_args()
 
     options.command_file_defaults = ('/var/lib/icinga/rw/icinga.cmd', '/var/lib/nagios/rw/nagios.cmd')
@@ -227,6 +236,26 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
             parser.exit(
                 status=2,
                 msg='No such File: %s\n' %(options.ssl_cert)
+            )
+
+    if not options.allowed_client_cert_dir:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the allowed-client-cert-dir.\n\n%s\n'
+                %(parser.format_help(),)
+            )
+        )
+    else:
+        if not os.path.exists(options.allowed_client_cert_dir):
+            parser.exit(
+                status=2,
+                msg='No such Directory: %s\n' %(options.allowed_client_cert_dir)
+            )
+        if not os.path.isdir(options.allowed_client_cert_dir):
+            parser.exit(
+                status=2,
+                msg='This is not a directory: %r\n' %(options.allowed_client_cert_dir)
             )
 
     return options, args

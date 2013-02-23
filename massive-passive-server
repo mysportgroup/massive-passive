@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
-__version__ = '0.0.1'
+__version__ = '0.3.1'
 
 import os
 import sys
@@ -17,10 +17,14 @@ from mplib.daemon import daemonize
 from twisted.internet import reactor
 from setproctitle import setproctitle
 from mplib.log import BASE_FORMAT_STDOUT
+from mplib.net.server import SSLCallbacks
 from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
+from mplib.net.server import SSLValidationStore
 from mplib.net.server import SSLServerContextFactory
 from mplib.net.server import ExternalCommandWriterFactory
+
+
 
 
 logger = logging.getLogger(__name__)
@@ -41,8 +45,10 @@ class Main(object):
         self.factory = ExternalCommandWriterFactory(
             self.options.command_file,
         )
+        self.ssl_validation_store = SSLValidationStore(self.options.allowed_client_cert_dir, self.options.ssl_ca_cert)
+        self.ssl_callback = SSLCallbacks(self.ssl_validation_store)
         self.ssl_factory = SSLServerContextFactory(
-            self.options.ssl_key, self.options.ssl_cert, self.options.ssl_ca_cert
+            self.options.ssl_key, self.options.ssl_cert, self.options.ssl_ca_cert, checkCallback=self.ssl_callback.verifyCallback
         )
 
 
