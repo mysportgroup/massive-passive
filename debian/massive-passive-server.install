@@ -1,0 +1,6 @@
+etc/init.d/massive-passive-server etc/init.d
+etc/default/massive-passive-server etc/default
+massive-passive-server usr/sbin/
+README.txt usr/share/doc/massive-passive-server/
+LICENSE.txt usr/share/doc/massive-passive-server/
+

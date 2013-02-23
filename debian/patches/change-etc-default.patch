@@ -1,0 +1,38 @@
+--- a/etc/default/massive-passive-client
++++ b/etc/default/massive-passive-client
+@@ -8,14 +8,14 @@
+ 
+ START="false"
+ LOGLEVEL="info"
+-PIDFILE="/tmp/massive-passive-client.pid"
++PIDFILE="/var/run/massive-passive/massive-passive-client.pid"
+ CONFDIR="/etc/massive-passive/checks.d"
+-USER="nobody"
+-GROUP="nogroup"
++USER="nagios"
++GROUP="nagios"
+ BATCH_WAIT_TIME="2"
+ BATCH_MAX_ITEMS="100"
+ INITIAL_RANDOM_WAIT_RANGE="10"
+-LOGFILE="/tmp/massive-passive-client.log"
++LOGFILE="/var/log/massive-passive/massive-passive-client.log"
+ SSL_KEY="/etc/massive-passive/massive-passive-client-ssl.key"
+ SSL_CERT="/etc/massive-passive/massive-passive-client-ssl.cert"
+ SSL_CA_CERT="/etc/massive-passive/massive-passive-ssl-ca.cert"
+--- a/etc/default/massive-passive-server
++++ b/etc/default/massive-passive-server
+@@ -8,10 +8,10 @@
+ 
+ START="false"
+ LOGLEVEL="info"
+-PIDFILE="/tmp/massive-passive-server.pid"
+-USER="nobody"
+-GROUP="nogroup"
+-LOGFILE="/tmp/massive-passive-server.log"
++PIDFILE="/var/run/massive-passive/massive-passive-server.pid"
++USER="nagios"
++GROUP="nagios"
++LOGFILE="/var/log/massive-passive/massive-passive-server.log"
+ SSL_KEY="/etc/massive-passive/massive-passive-server-ssl.key"
+ SSL_CERT="/etc/massive-passive/massive-passive-server-ssl.cert"
+ SSL_CA_CERT="/etc/massive-passive/massive-passive-ssl-ca.cert"

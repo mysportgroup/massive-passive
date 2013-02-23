@@ -1,3 +1,21 @@
+massive-passive (0.3.0-ubuntu4) precise; urgency=low
+
+  * fix init scripts 
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 14 Feb 2013 02:56:59 +0100
+
+massive-passive (0.3.0-ubuntu3) precise; urgency=low
+
+  * disabled inserv and co for ubuntu
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 14 Feb 2013 02:47:40 +0100
+
+massive-passive (0.3.0-ubuntu2) precise; urgency=low
+
+  * new upstream release
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 14 Feb 2013 02:40:09 +0100
+
 massive-passive (0.2.13-ubuntu2) precise; urgency=low
 
   * new upstream release 0.2.13
