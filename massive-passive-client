@@ -1,0 +1,228 @@
+#!/usr/bin/python2.6
+# -*- coding: utf-8 -*-
+
+__author__ = 'Robin Wittler'
+__contact__ = 'r.wittler@mysportgroup.de'
+__copyright__ = '(c) 2012 by mysportgroup GmbH'
+__license__ = 'GPL3+'
+__version__ = '0.3.0'
+
+import os
+import sys
+import signal
+import logging
+from time import sleep
+from Queue import Queue
+from mplib import getopts
+from threading import Event
+from mplib.config import ConfigDir
+from mplib.daemon import daemonize
+from setproctitle import setproctitle
+from mplib.scheduler import ThreadPool
+from mplib.log import BASE_FORMAT_STDOUT
+from mplib.threads import SendNativeWorker
+from mplib.log import set_logfile_permissions
+from logging.handlers import WatchedFileHandler
+from mplib.scheduler import MassivePassiveScheduler
+
+
+
+class Main(object):
+    def __init__(self, name, options, send_worker, scheduler):
+        super(Main, self).__init__()
+        self.name = name
+        self.logger = logging.getLogger(
+            '%s.%s' %(
+                self.name,
+                self.__class__.__name__
+            )
+        )
+        self.options = options
+        self.stop_event = Event()
+        self.send_queue = Queue()
+        self._send_worker = send_worker
+        self.send_worker = self._send_worker(
+            self.send_queue,
+            self.stop_event,
+            self.options.ssl_key,
+            self.options.ssl_cert,
+            self.options.ssl_ca_cert,
+            max_wait=self.options.batch_wait_time,
+            batch_mode=self.options.batch_mode,
+            max_results=self.options.batch_max_items
+        )
+        self._scheduler = scheduler
+
+    def run(self):
+        self.set_proc_title()
+        self.drop_rights()
+        if self.options.foreground is False:
+            self.write_pidfile()
+        self.logger.info('Startup!')
+        self.start_send_worker()
+        self.start_scheduler()
+        self.add_jobs_to_scheduler()
+        while not self.stop_event.is_set():
+            sleep(0.1)
+
+    def set_proc_title(self):
+        setproctitle(
+            '%s %s' %(sys.argv[0], ' '.join(sys.argv[1:]))
+        )
+
+    def write_pidfile(self):
+        pid = os.getpid()
+        pidfile_fd = os.open(
+            self.options.pidfile,
+            os.O_CREAT | os.O_EXCL | os.O_RDWR,
+            0640
+        )
+        pidfile = os.fdopen(pidfile_fd, 'w+')
+        pidfile.write('%s\n' %(pid,))
+        pidfile.flush()
+        os.close(pidfile_fd)
+
+    def drop_rights(self):
+        current_uid = os.getuid()
+        current_gid = os.getgid()
+
+        if not options.group == current_gid:
+            self.logger.debug('Switching group to %r', options.group)
+            os.setgid(options.group)
+            os.setegid(options.group)
+
+        if not options.user == current_uid:
+            self.logger.debug('Switching user to %r', options.user)
+            os.setuid(options.user)
+            os.seteuid(options.user)
+
+    def start(self):
+        try:
+            self.run()
+        except Exception as error:
+            self.logger.exception(error)
+            self.logger.info('Emitting stop signal ...')
+            os.kill(os.getpid(), signal.SIGTERM)
+
+    def start_scheduler(self):
+        self.logger.debug('Calling scheduler start ...')
+        jobs_counter = len(self.get_check_configs())
+        self.scheduler = self._scheduler(
+            self.send_queue,
+            threadpool=ThreadPool(
+                core_threads=(jobs_counter / 10),
+                max_threads=jobs_counter,
+                keepalive=30
+            )
+        )
+        self.scheduler.start()
+        self.logger.debug('Scheduler is running: %r.', self.scheduler.running)
+
+    def add_jobs_to_scheduler(self):
+        self.logger.debug('Getting passive check configs ...')
+        configs = self.get_check_configs()
+        self.scheduler.add_passive_checks(
+            configs,
+            wait_range_end=self.options.initial_random_wait_range
+        )
+
+    def start_send_worker(self):
+        self.logger.debug('Calling send_worker thread start ...')
+        self.send_worker.start()
+        self.logger.debug(
+            'send_worker is alive: %r', self.send_worker.is_alive()
+        )
+
+    def stop_scheduler(self):
+        if self.scheduler.running:
+            self.logger.debug('Calling scheduler shutdown ...')
+            self.scheduler.shutdown()
+            self.logger.debug('Scheduler shutdown done.')
+        self.logger.debug('Scheduler is running: %r.', self.scheduler.running)
+
+    def stop_send_worker(self):
+        if self.send_worker.is_alive():
+            self.logger.debug(
+                'Calling %r thread join ...',
+                self.send_worker.name
+            )
+
+            self.send_worker.join()
+
+            self.logger.debug(
+                '%r joined.',
+                self.send_worker.name
+            )
+
+        self.logger.debug(
+            '%r is alive: %r',
+            self.send_worker.name,
+            self.send_worker.is_alive()
+        )
+
+    def get_check_configs(self):
+        configs = ConfigDir(self.options.confdir)
+        self.logger.debug(
+            'Get this from confdir %r: %r', self.options.confdir, configs
+        )
+        return configs
+
+    def config_reload(self, signum, sigframe):
+        self.logger.info(
+            'Received Signal %s ... reloading config now ...', signum
+        )
+        self.stop_scheduler()
+        #self.scheduler = self._scheduler(self.send_queue)
+        self.start_scheduler()
+        self.add_jobs_to_scheduler()
+        self.logger.info('Config reload done.')
+
+    def shutdown(self, signum, sigframe):
+        self.logger.info('Received Signal %s.', signum)
+        self.logger.info('Going down now ...')
+        self.stop_event.set()
+        self.logger.debug('Stop Event set.')
+        self.stop_scheduler()
+        self.stop_send_worker()
+
+        if self.options.foreground is False:
+            self.logger.debug('Removing pidfile at %r', self.options.pidfile)
+            try:
+                os.unlink(self.options.pidfile)
+            except OSError as error:
+                self.logger.debug('Ignoring error while unlinking pidfile.')
+                self.logger.exception(error)
+        self.logger.info('Exiting now!')
+
+if __name__ == '__main__':
+    options, args = getopts.client_getopt(
+        version='%prog ' + __version__,
+        description=getopts.get_client_description(),
+        epilog=getopts.get_gpl3_text()
+    )
+
+    logging.basicConfig(level=options.loglevel, format=BASE_FORMAT_STDOUT)
+    root_logger = logging.getLogger('')
+
+    if options.foreground is False:
+        daemonize(cwd='/')
+
+    main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
+    main.drop_rights()
+
+    filehandler = WatchedFileHandler(options.logfile)
+    filehandler.setLevel(options.loglevel)
+    filehandler_formatter = logging.Formatter(BASE_FORMAT_STDOUT)
+    filehandler.setFormatter(filehandler_formatter)
+    root_logger.addHandler(filehandler)
+    root_logger.setLevel(options.loglevel)
+    set_logfile_permissions(options.logfile)
+
+    signal.signal(signal.SIGTERM, main.shutdown)
+    signal.signal(signal.SIGINT, main.shutdown)
+    signal.signal(signal.SIGHUP, main.config_reload)
+    main.start()
+    sys.exit(0)
+
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

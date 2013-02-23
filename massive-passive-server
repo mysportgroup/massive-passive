@@ -3,69 +3,68 @@
 
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
-__copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.2.13'
+__copyright__ = '(c) 2013 by mysportgroup.de'
+__version__ = '0.0.1'
 
 import os
 import sys
 import signal
 import logging
-from time import sleep
-from Queue import Queue
 from mplib import getopts
 from threading import Event
-from mplib.config import ConfigDir
 from mplib.daemon import daemonize
+from twisted.internet import reactor
 from setproctitle import setproctitle
-from mplib.scheduler import ThreadPool
 from mplib.log import BASE_FORMAT_STDOUT
-from mplib.threads import SendNscaWorker
 from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
-from mplib.scheduler import MassivePassiveScheduler
+from mplib.net.server import SSLServerContextFactory
+from mplib.net.server import ExternalCommandWriterFactory
 
+
+logger = logging.getLogger(__name__)
 
 
 class Main(object):
-    def __init__(self, name, options, send_worker, scheduler):
+    def __init__(self, name, options):
         super(Main, self).__init__()
         self.name = name
         self.logger = logging.getLogger(
             '%s.%s' %(
                 self.name,
                 self.__class__.__name__
-            )
+                )
         )
         self.options = options
         self.stop_event = Event()
-        self.send_queue = Queue()
-        self._send_worker = send_worker
-        self.send_worker = self._send_worker(
-            self.send_queue,
-            self.stop_event,
-            max_wait=self.options.batch_wait_time,
-            batch_mode=self.options.batch_mode,
-            max_results=self.options.batch_max_items,
-            path_to_send_nsca=self.options.path_to_send_nsca
+        self.factory = ExternalCommandWriterFactory(
+            self.options.command_file,
         )
-        self._scheduler = scheduler
+        self.ssl_factory = SSLServerContextFactory(
+            self.options.ssl_key, self.options.ssl_cert, self.options.ssl_ca_cert
+        )
+
 
     def run(self):
+        self.logger.info('Startup!')
         self.set_proc_title()
         self.drop_rights()
         if self.options.foreground is False:
             self.write_pidfile()
-        self.logger.info('Startup!')
-        self.start_send_worker()
-        self.start_scheduler()
-        self.add_jobs_to_scheduler()
-        while not self.stop_event.is_set():
-            sleep(0.1)
+        context = self.ssl_factory.buildContext()
+
+        reactor.listenSSL(
+            self.options.port,
+            self.factory,
+            self.ssl_factory,
+            interface=self.options.listen
+        )
+        reactor.run()
 
     def set_proc_title(self):
         setproctitle(
-            '%s %s' %(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:]))
+            '%s %s' %(sys.argv[0], ' '.join(sys.argv[1:]))
         )
 
     def write_pidfile(self):
@@ -102,77 +101,11 @@ class Main(object):
             self.logger.info('Emitting stop signal ...')
             os.kill(os.getpid(), signal.SIGTERM)
 
-    def start_scheduler(self):
-        self.logger.debug('Calling scheduler start ...')
-        jobs_counter = len(self.get_check_configs())
-        self.scheduler = self._scheduler(
-            self.send_queue,
-            threadpool=ThreadPool(
-                core_threads=(jobs_counter / 10),
-                max_threads=jobs_counter,
-                keepalive=30
-            )
-        )
-        self.scheduler.start()
-        self.logger.debug('Scheduler is running: %r.', self.scheduler.running)
-
-    def add_jobs_to_scheduler(self):
-        self.logger.debug('Getting passive check configs ...')
-        configs = self.get_check_configs()
-        self.scheduler.add_passive_checks(
-            configs,
-            wait_range_end=self.options.initial_random_wait_range
-        )
-
-    def start_send_worker(self):
-        self.logger.debug('Calling send_worker thread start ...')
-        self.send_worker.start()
-        self.logger.debug(
-            'send_worker is alive: %r', self.send_worker.is_alive()
-        )
-
-    def stop_scheduler(self):
-        if self.scheduler.running:
-            self.logger.debug('Calling scheduler shutdown ...')
-            self.scheduler.shutdown()
-            self.logger.debug('Scheduler shutdown done.')
-        self.logger.debug('Scheduler is running: %r.', self.scheduler.running)
-
-    def stop_send_worker(self):
-        if self.send_worker.is_alive():
-            self.logger.debug(
-                'Calling %r thread join ...',
-                self.send_worker.name
-            )
-
-            self.send_worker.join()
-
-            self.logger.debug(
-                '%r joined.',
-                self.send_worker.name
-            )
-
-        self.logger.debug(
-            '%r is alive: %r',
-            self.send_worker.name,
-            self.send_worker.is_alive()
-        )
-
-    def get_check_configs(self):
-        configs = ConfigDir(self.options.confdir)
-        self.logger.debug(
-            'Get this from confdir %r: %r', self.options.confdir, configs
-        )
-        return configs
 
     def config_reload(self, signum, sigframe):
         self.logger.info(
             'Received Signal %s ... reloading config now ...', signum
         )
-        self.stop_scheduler()
-        #self.scheduler = self._scheduler(self.send_queue)
-        self.start_scheduler()
-        self.add_jobs_to_scheduler()
         self.logger.info('Config reload done.')
 
     def shutdown(self, signum, sigframe):
@@ -180,8 +113,8 @@ class Main(object):
         self.logger.info('Going down now ...')
         self.stop_event.set()
         self.logger.debug('Stop Event set.')
-        self.stop_scheduler()
-        self.stop_send_worker()
+        self.logger.debug('Stopping reactor ...')
+        reactor.stop()
 
         if self.options.foreground is False:
             self.logger.debug('Removing pidfile at %r', self.options.pidfile)
@@ -192,10 +125,11 @@ class Main(object):
                 self.logger.exception(error)
         self.logger.info('Exiting now!')
 
+
 if __name__ == '__main__':
-    options, args = getopts.getopt(
+    options, args = getopts.server_getopt(
         version='%prog ' + __version__,
-        description=getopts.get_description(),
+        description=getopts.get_server_description(),
         epilog=getopts.get_gpl3_text()
     )
 
@@ -205,7 +139,7 @@ if __name__ == '__main__':
     if options.foreground is False:
         daemonize(cwd='/')
 
-    main = Main(sys.argv[0], options, SendNscaWorker, MassivePassiveScheduler)
+    main = Main(sys.argv[0], options)
     main.drop_rights()
 
     filehandler = WatchedFileHandler(options.logfile)
@@ -221,6 +155,5 @@ if __name__ == '__main__':
     signal.signal(signal.SIGHUP, main.config_reload)
     main.start()
     sys.exit(0)
-
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

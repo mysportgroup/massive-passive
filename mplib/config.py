@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class ConfigFile(IterableUserDict):
     def __init__(self, path):
         IterableUserDict.__init__(self)
-        self.path = os.path.realpath(path)
+        self.path = os.path.abspath(path)
         self._initialize()
 
     def _initialize(self):
