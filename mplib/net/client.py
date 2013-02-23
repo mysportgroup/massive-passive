@@ -145,7 +145,12 @@ class PassiveCheckSubmitClient(object):
             'Closing connection to %r.',
             self.ssl_sock.getpeername()
         )
-        self.ssl_sock.unwrap()
+        try:
+            self.ssl_sock.unwrap()
+        except socket.error:
+            error_type, error_value, error_traceback = sys.exc_info()
+            if error_value.errno != 0:
+                raise
         self.sock.shutdown(socket.SHUT_RDWR)
         self.connected = False
         self.sock = None
