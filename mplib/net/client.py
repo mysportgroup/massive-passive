@@ -147,9 +147,10 @@ class PassiveCheckSubmitClient(object):
         )
         try:
             self.ssl_sock.unwrap()
-        except socket.error:
-            error_type, error_value, error_traceback = sys.exc_info()
-            if error_value.errno != 0:
+        except socket.error as error:
+            # "fix" for the issue http://bugs.python.org/issue10808
+            # we raise only an error if the errno is not zero while unwrapping the ssl_sock
+            if error.errno != 0:
                 raise
         self.sock.shutdown(socket.SHUT_RDWR)
         self.connected = False
