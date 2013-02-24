@@ -1,11 +1,11 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 import os
 import sys
@@ -15,6 +15,7 @@ from time import sleep
 from Queue import Queue
 from mplib import getopts
 from threading import Event
+from threading import Thread
 from mplib.config import ConfigDir
 from mplib.daemon import daemonize
 from setproctitle import setproctitle
@@ -24,12 +25,87 @@ from mplib.threads import SendNativeWorker
 from mplib.log import set_logfile_permissions
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
+from mplib.net.client import PassiveCheckSubmitClient
 
 
+class SendNscaModeMain(object):
+    def __init__(self, name, options, check_submit_client):
+        super(SendNscaModeMain, self).__init__()
+        self.name = name
+        self.logger = logging.getLogger(
+            '%s.%s' %(
+                self.name,
+                self.__class__.__name__
+            )
+        )
+        self.options = options
+        self.stop_event = Event()
+        self.send_queue = Queue()
+        self.check_submit_client = check_submit_client
+        self.active_threads = list()
 
-class Main(object):
+    def run(self):
+        self.set_proc_title()
+        self.logger.info('Startup!')
+        message = '%s\n' %(self.read_message_from_stdin().rstrip())
+        for ip in self.options.server:
+            try:
+                ip, port = ip.split(':')
+            except ValueError:
+                port = 5678
+
+            check_submit_client = self.check_submit_client(
+                message,
+                ip,
+                self.options.ssl_key,
+                self.options.ssl_cert,
+                self.options.ssl_ca_cert,
+                port=int(port)
+            )
+            check_submit_client_thread = Thread(target=check_submit_client.start)
+            check_submit_client_thread.start()
+            self.active_threads.append(check_submit_client_thread)
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    def read_message_from_stdin(self, timeout=3):
+        def timeout_handler(signum, sigframe):
+            raise RuntimeError('No message could read from stdin after %r seconds.' %(timeout))
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout)
+        message = sys.stdin.read()
+        signal.alarm(0)
+        return message
+
+    def set_proc_title(self):
+        setproctitle(
+            '%s %s' %(sys.argv[0], ' '.join(sys.argv[1:]))
+        )
+
+    def start(self):
+        try:
+            self.run()
+        except Exception as error:
+            self.logger.exception(error)
+            self.logger.info('Emitting stop signal ...')
+            os.kill(os.getpid(), signal.SIGTERM)
+
+    def shutdown(self, signum, sigframe):
+        self.logger.info('Received Signal %s.', signum)
+        self.logger.info('Going down now ...')
+        self.stop_event.set()
+        for thread in self.active_threads:
+            self.logger.debug('Joining %r ...', thread.name)
+            thread.join()
+            self.logger.debug('Thread %r alive? => %r', thread.name, thread.is_alive())
+        self.logger.debug('Stop Event set.')
+        self.logger.info('Exiting now!')
+
+    def config_reload(self, signum, sigframe):
+        pass
+
+
+class Main(SendNscaModeMain):
     def __init__(self, name, options, send_worker, scheduler):
-        super(Main, self).__init__()
         self.name = name
         self.logger = logging.getLogger(
             '%s.%s' %(
@@ -65,11 +141,6 @@ class Main(object):
         while not self.stop_event.is_set():
             sleep(0.1)
 
-    def set_proc_title(self):
-        setproctitle(
-            '%s %s' %(sys.argv[0], ' '.join(sys.argv[1:]))
-        )
-
     def write_pidfile(self):
         pid = os.getpid()
         pidfile_fd = os.open(
@@ -95,14 +166,6 @@ class Main(object):
             self.logger.debug('Switching user to %r', options.user)
             os.setuid(options.user)
             os.seteuid(options.user)
-
-    def start(self):
-        try:
-            self.run()
-        except Exception as error:
-            self.logger.exception(error)
-            self.logger.info('Emitting stop signal ...')
-            os.kill(os.getpid(), signal.SIGTERM)
 
     def start_scheduler(self):
         self.logger.debug('Calling scheduler start ...')
@@ -201,14 +264,21 @@ if __name__ == '__main__':
         epilog=getopts.get_gpl3_text()
     )
 
-    logging.basicConfig(level=options.loglevel, format=BASE_FORMAT_STDOUT)
+    if options.silent is False:
+        stream = None
+    else:
+        stream = open(os.devnull, 'w', 1)
+    logging.basicConfig(stream=stream, format=BASE_FORMAT_STDOUT)
     root_logger = logging.getLogger('')
+    logger = logging.getLogger(sys.argv[0])
+    logger.setLevel(options.loglevel)
 
-    if options.foreground is False:
+    if options.foreground is False and options.act_as_sender is False:
         daemonize(cwd='/')
-
-    main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
-    main.drop_rights()
+        main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
+        main.drop_rights()
+    else:
+        main = SendNscaModeMain(sys.argv[0], options, PassiveCheckSubmitClient)
 
     filehandler = WatchedFileHandler(options.logfile)
     filehandler.setLevel(options.loglevel)
