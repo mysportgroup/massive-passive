@@ -1,0 +1,21 @@
+# Defaults for massive-passive-server initscript
+# sourced by /etc/init.d/massive-passive-server
+# installed at /etc/default/massive-passsive-server by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+START="false"
+LOGLEVEL="info"
+PIDFILE="/var/run/massive-passive/massive-passive-server.pid"
+USER="nagios"
+GROUP="nagios"
+LOGFILE="/var/log/massive-passive/massive-passive-server.log"
+SSL_KEY="/etc/massive-passive/massive-passive-server-ssl.key"
+SSL_CERT="/etc/massive-passive/massive-passive-server-ssl.cert"
+SSL_CA_CERT="/etc/massive-passive/massive-passive-ssl-ca.cert"
+ALLOWED_CLIENT_CERT_DIR="/etc/massive-passive/allowed-client-cert.d"
+
+# Additional options that are passed to the Daemon.
+DAEMON_ARGS="--loglevel $LOGLEVEL --user $USER --group $GROUP --pidfile $PIDFILE --logfile $LOGFILE --ssl-key $SSL_KEY --ssl-cert $SSL_CERT --ssl-ca-cert $SSL_CA_CERT --allowed-client-cert-dir $ALLOWED_CLIENT_CERT_DIR"

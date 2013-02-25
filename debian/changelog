@@ -1,3 +1,9 @@
+massive-passive (0.3.1-ubuntu1) precise; urgency=low
+
+  * new upstream release of version 0.3.1
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Mon, 25 Feb 2013 21:11:41 +0100
+
 massive-passive (0.3.0-ubuntu4) precise; urgency=low
 
   * fix init scripts 

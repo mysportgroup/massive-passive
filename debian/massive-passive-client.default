@@ -1,0 +1,26 @@
+# Defaults for massive-passive-client initscript
+# sourced by /etc/init.d/massive-passive-client
+# installed at /etc/default/massive-passsive-client by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+START="false"
+LOGLEVEL="info"
+PIDFILE="/var/run/massive-passive/massive-passive-client.pid"
+CONFDIR="/etc/massive-passive/checks.d"
+USER="nagios"
+GROUP="nagios"
+BATCH_WAIT_TIME="2"
+BATCH_MAX_ITEMS="100"
+INITIAL_RANDOM_WAIT_RANGE="10"
+LOGFILE="/var/log/massive-passive/massive-passive-client.log"
+SSL_KEY="/etc/massive-passive/massive-passive-client-ssl.key"
+SSL_CERT="/etc/massive-passive/massive-passive-client-ssl.cert"
+SSL_CA_CERT="/etc/massive-passive/massive-passive-ssl-ca.cert"
+
+
+
+# Additional options that are passed to the Daemon.
+DAEMON_ARGS="--loglevel $LOGLEVEL --user $USER --group $GROUP --batch-mode --batch-wait-time $BATCH_WAIT_TIME --batch-max-items $BATCH_MAX_ITEMS --initial-random-wait-range $INITIAL_RANDOM_WAIT_RANGE --pidfile $PIDFILE --logfile $LOGFILE --confdir $CONFDIR --ssl-key $SSL_KEY --ssl-cert $SSL_CERT --ssl-ca-cert $SSL_CA_CERT"
