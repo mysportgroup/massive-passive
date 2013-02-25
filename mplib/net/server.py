@@ -160,7 +160,7 @@ class SSLValidationStore(object):
                 except SSLError as error:
                     self.logger.debug('Could not load certificate at %r. Error was: %r', filename, error)
                     continue
-            if not self.is_cert_from_ca(cert):
+            if self.cacert_key_identifier is not None and not self.is_cert_from_ca(cert):
                 self.logger.info(
                     'Authority Key Identifier mismatch for certificate %r. Ignoring certificate.',
                     filename
