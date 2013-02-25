@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 __author__ = 'Robin Wittler'
@@ -118,6 +118,16 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
         help='The path to the server ssl cert file. Default: %default'
     )
 
+    parser.add_option(
+        '--allowed-client-cert-dir',
+        default='/etc/massive-passive/allowed-client-cert.d',
+        help=(
+            'Only clients with valid certificates in this dir are allowed to ' +
+            'send results. Just put the client certs into this dir to authorize them. ' +
+            'Default: %default'
+        )
+    )
+
     options, args = parser.parse_args()
 
     options.command_file_defaults = ('/var/lib/icinga/rw/icinga.cmd', '/var/lib/nagios/rw/nagios.cmd')
@@ -171,16 +181,17 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
         else:
             parser.exit(
                 status=2,
-                msg=(
-                    '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
-                    %(parser.format_help(),)
+                msg='No command file found at %s\n' %(
+                    options.command_file or ' or '.join(options.command_file_defaults)
                 )
             )
     else:
-        if not os.path.exists(options.command_file):
-            parser.exit(
-                status=2,
-                msg='No such File: %s\n' %(options.command_file)
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
+                %(parser.format_help(),)
+            )
         )
 
     if not options.ssl_ca_cert:
@@ -229,6 +240,26 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
                 msg='No such File: %s\n' %(options.ssl_cert)
             )
 
+    if not options.allowed_client_cert_dir:
+        parser.exit(
+            status=2,
+            msg=(
+                '\nERROR: You must set the path to the allowed-client-cert-dir.\n\n%s\n'
+                %(parser.format_help(),)
+            )
+        )
+    else:
+        if not os.path.exists(options.allowed_client_cert_dir):
+            parser.exit(
+                status=2,
+                msg='No such Directory: %s\n' %(options.allowed_client_cert_dir)
+            )
+        if not os.path.isdir(options.allowed_client_cert_dir):
+            parser.exit(
+                status=2,
+                msg='This is not a directory: %r\n' %(options.allowed_client_cert_dir)
+            )
+
     return options, args
 
 
@@ -255,6 +286,20 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
         default='INFO',
         help='The loglevel to use. Default: %default'
     )
+
+    parser.add_option(
+        '--logfile',
+        default='/tmp/massive-passive-client.log',
+        help='The path to the logfile. Default: %default'
+    )
+
+    parser.add_option(
+        '--silent',
+        default=False,
+        action='store_true',
+        help='Do not log to stdout. Default: %default'
+    )
+
 
     parser.add_option(
         '--confdir',
@@ -327,9 +372,19 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
     )
 
     parser.add_option(
-        '--logfile',
-        default='/tmp/massive-passive-client.log',
-        help='The path to the logfile. Default: %default'
+        '--act-as-sender',
+        action='store_true',
+        default=False,
+        help='Act only as a sender. Take input from stdin and send it to server(s). Default: %default'
+    )
+
+    parser.add_option(
+        '--server',
+        default=None,
+        help=(
+            'The address of one or more massive-passive-servers (comma separated). ' +
+            'This option is only valid with the --act-as-sender option. Default: %default'
+        )
     )
 
     parser.add_option(
@@ -356,13 +411,25 @@ def client_getopt(usage=None, description=None, version=None, epilog=None):
     options.user = pwd.getpwnam(options.user).pw_uid
     options.group = grp.getgrnam(options.group).gr_gid
 
+    if options.act_as_sender is True:
+        if options.server is None:
+            parser.exit(
+                status=2,
+                msg=(
+                    'The --act-as-sender option needs also the --server option set.\n\n%s\n'
+                    %(parser.format_help(),)
+                )
+            )
+        else:
+            options.server = [server.lstrip(' ').rstrip(' ') for server in options.server.split(',')]
+
     if not options.ssl_key:
         parser.exit(
             status=2,
             msg=(
                 '\nERROR: You must set the path to the client ssl key file.\n\n%s\n'
                 %(parser.format_help(),)
-                )
+            )
         )
     else:
         if not os.path.exists(options.ssl_key):

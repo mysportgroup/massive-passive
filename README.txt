@@ -4,9 +4,14 @@ massive-passive
 
 A scheduler for passive nagios/icinga checks.
 massive-passive is a simple scheduler for passive nagios/icinga checks.
-At the moment it uses send_nsca for sending data to nagios/icinga (other 
-methods are planned, like stuff from mod_gearman (send_gearman?), a own
-listener and maybe even delivery via cgi (if someone needs this).
+It is implemented as a client/server architecture and has it's own encrypted
+transport channel (as from version 0.3.0) and uses x509 authentification. It
+also can be used as a replacement for nsca/send_nsca, because the client has
+a --act-as-sender option, which transports every string from stdin to the server.
+
+Using massive-passive as a nsca/send_nsca replacement makes sense, because to get
+rid of the byte limitations hardcoded into nsca/send_nsca binaries, which cripples
+often performance data or the check message itself.
 
  
 
@@ -24,10 +29,9 @@ possible to say:
 
 You can also just use every existing normal nagios/icinga host and service
 check (if written with the standard rules for nagios/icinga checks in mind)
-and execute it via massive-passive. The result of a check will be translated
-in the correct nsca format and send to (maybe multiple) nagios/icinga hosts.
-And if you want, this will be done in batch mode. So you could send e.g.
-5 results in one nsca connection.
+and execute it via massive-passive. The result can be send to (maybe multiple)
+nagios/icinga hosts. And if you want, this will be done in batch mode.
+So you could send e.g. 100 results in one massive-passive connection.
 
 Also you don't have to deal with lock files. Imagine you have a long running
 check - and the execution Time is somewhat a moving target. But the check must
@@ -49,18 +53,30 @@ How?
 
 Get the source from github (https://github.com/mysportgroup/massive-passive).
 Make sure you have python and python setuptools installed.
-Do:
 
-    Configure your nsca daemon and send_nsca client.
+For both versions (server and client) do:
 
     cd /path/to/massive-passive-source
     python setup.py install
 
-    now start the daemon:
-    /etc/init.d/massive-passive start
+Then edit the files with the default start options for the server and client.
+They are under /etc/default/massive-passive-(client, server)
+
+For the client do now:
+    /etc/init.d/massive-passive-client start
 
     on debian you could do:
-    service massive-passive start
+    service massive-passive-client start
+
+
+For the server do now:
+    /etc/init.d/massive-passive-server start
+
+    on debian you could do:
+    service massive-passive-server start
+
+
+
 
 Then take a look at /etc/massive-passive/checks.d/
 Checks configuration is done via a simple JSON configfile for every check.
@@ -93,7 +109,7 @@ massive-passive side)
 
 interval: this interval is used to execute your checks (in seconds)
 
-servers: you can add as many servers as needed. if they use the default nsca port (port 5667)
+servers: you can add as many servers as needed. if they use the default massive-passive port (port 5678)
 you can write:
      "hostname": "ipaddress"
 if a different port is needed than you can write:
@@ -126,7 +142,7 @@ At version 0.2.10 it also possible to do something like this:
            }
     "servers":
            {
-                    "nagios-host-1": "127.0.0.1:5667",
+                    "nagios-host-1": "127.0.0.1:5678",
                     "icinga-host-1": "127.0.1.1:9999",
                     "icinga-host-2": "10.10.10.1"
             },
@@ -156,12 +172,73 @@ to reload the configs at runtime.
 
 
 
-All command line options for starting massive-passive:
-------------------------------------------------------
+All command line options for starting massive-passive-server:
+-------------------------------------------------------------
 
-Usage: massive-passive [options]
+Usage: massive-passive-server [options]
 
-massive_passive is a tool for scheduling passive nagios/icinga checks.
+massive-passive is a client/server toolset for scheduling passive
+nagios/icinga checks. This is the server programm which receives the check
+results and write them into the nagios/icinga external command file.
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  --listen=LISTEN       The ip to listen on. At this moment it is only
+                        possible to listen at ipv4 or ipv6 - not both at the
+                        same time. This limitation will go away in one of the
+                        next releases. Default: 0.0.0.0
+  --port=PORT           The port to listen on. Default: 5678
+  -f, --foreground      Do not run in Background. Default: False
+  -l LOGLEVEL, --loglevel=LOGLEVEL
+                        The loglevel to use. Default: INFO
+  --pidfile=PIDFILE     The path to the pidfile (if running in Background).
+                        Default: /tmp/massive-passive-server.pid
+  -u USER, --user=USER  The username who should execute this process. Default:
+                        real
+  -g GROUP, --group=GROUP
+                        The groupname this process runs at. Default: real
+  --logfile=LOGFILE     The path to the logfile. Default: /tmp/massive-
+                        passive-server.log
+  --command-file=COMMAND_FILE
+                        The path to the nagios/icinga external command file.
+                        If not set, it defaults to one of
+                        /var/lib/icinga/rw/icinga.cmd or
+                        /var/lib/nagios/rw/nagios.cmd - depending which of
+                        them exists.
+  --ssl-ca-cert=SSL_CA_CERT
+                        The path to the ssl ca cert. Default: /etc/massive-
+                        passive/massive-passive-ssl-ca.cert
+  --ssl-key=SSL_KEY     The path to the server ssl key file. Default: /etc
+                        /massive-passive/massive-passive-server-ssl.key
+  --ssl-cert=SSL_CERT   The path to the server ssl cert file. Default: /etc
+                        /massive-passive/massive-passive-server-ssl.cert
+  --allowed-client-cert-dir=ALLOWED_CLIENT_CERT_DIR
+                        Only clients with valid certificates in this dir are
+                        allowed to send results. Just put the client certs
+                        into this dir to authorize them. Default: /etc
+                        /massive-passive/allowed-client-cert.d
+
+author: Robin Wittler <r.wittler@mysportgroup.de>  Copyright (C) 2012 by
+mysportgroup.de  This program is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.  This program is distributed in the hope that it
+will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+Public License for more details.  You should have received a copy of the GNU
+General Public License along with this program.  If not, see
+<http://www.gnu.org/licenses/>.
+
+
+All command line options for starting massive-passive-client:
+-------------------------------------------------------------
+
+Usage: massive-passive-client [options]
+
+massive-passive is a client/server toolset for scheduling passive
+nagios/icinga checks. This is the client programm which schedules the checks
+and sends the results to the massive-passive-server
 
 Options:
   --version             show program's version number and exit
@@ -169,10 +246,13 @@ Options:
   -f, --foreground      Do not run in Background. Default: False
   -l LOGLEVEL, --loglevel=LOGLEVEL
                         The loglevel to use. Default: INFO
+  --logfile=LOGFILE     The path to the logfile. Default: /tmp/massive-
+                        passive-client.log
+  --silent              Do not log to stdout. Default: False
   --confdir=CONFDIR     The path to the passive check configurations
                         directory. Default: /etc/massive-passive/checks.d
   --pidfile=PIDFILE     The path to the pidfile (if running in Background).
-                        Default: /tmp/massive-passive.pid
+                        Default: /tmp/massive-passive-client.pid
   --batch-mode          Use batch mode for sending passive check results?
                         Default: False
   --batch-wait-time=BATCH_WAIT_TIME
@@ -180,11 +260,11 @@ Options:
                         batch mode. Default: 2
   --batch-max-items=BATCH_MAX_ITEMS
                         How much items to use in batch mode. A value of 0
-                        means unlimited items. Default: 10
+                        means unlimited items. Default: 100
   -u USER, --user=USER  The username who should execute this process. Default:
-                        <the actual username>
+                        real
   -g GROUP, --group=GROUP
-                        The groupname this process runs at. Default: <the actual group name>
+                        The groupname this process runs at. Default: real
   --initial-random-wait-range=INITIAL_RANDOM_WAIT_RANGE
                         The seconds to random wait before the scheduler
                         executes the jobs the first time. This only applies
@@ -193,11 +273,18 @@ Options:
                         set to 0, there is no range and every check will be
                         initially scheduled after 2 seconds (which can produce
                         some load). Default: 10
-  --logfile=LOGFILE     The path to the logfile. Default: /tmp/massive-
-                        passive.log
-  --path-to-send-nsca=PATH_TO_SEND_NSCA
-                        The path to the send_nsca binary. Default:
-                        /usr/sbin/send_nsca
+  --act-as-sender       Act only as a sender. Take input from stdin and send
+                        it to server(s). Default: False
+  --server=SERVER       The address of one or more massive-passive-servers
+                        (comma separated). This option is only valid with the
+                        --act-as-sender option. Default: none
+  --ssl-key=SSL_KEY     The path to the client ssl key file. Default: /etc
+                        /massive-passive/massive-passive-client-ssl.key
+  --ssl-cert=SSL_CERT   The path to the client ssl cert file. Default: /etc
+                        /massive-passive/massive-passive-client-ssl.cert
+  --ssl-ca-cert=SSL_CA_CERT
+                        The path to the ssl ca cert file. Default: /etc
+                        /massive-passive/massive-passive-ssl-ca.cert
 
 author: Robin Wittler <r.wittler@mysportgroup.de>  Copyright (C) 2012 by
 mysportgroup.de  This program is free software: you can redistribute it and/or
@@ -219,9 +306,10 @@ TODO:
 -----
 
     * write a Documentation
-    * write a own transport channel to get rid of nsca/send_nsca
-      This channel should support ssl client auth.
+    * implement a thread which uses pyinotify to monitor the ALLOWED_CLIENT_CERT_DIR
+      in "realtime" and apply changes (add/remove events) instantly.
     * Make it possible that the massive-passive client can configure it's checks
       on it's own - based on the nagios/icinga config. This feature can be switched of.
+
 
 

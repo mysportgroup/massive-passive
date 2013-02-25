@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 __author__ = 'Robin Wittler'
@@ -145,7 +145,13 @@ class PassiveCheckSubmitClient(object):
             'Closing connection to %r.',
             self.ssl_sock.getpeername()
         )
-        self.ssl_sock.unwrap()
+        try:
+            self.ssl_sock.unwrap()
+        except socket.error as error:
+            # "fix" for the issue http://bugs.python.org/issue10808
+            # we raise only an error if the errno is not zero while unwrapping the ssl_sock
+            if error.errno != 0:
+                raise
         self.sock.shutdown(socket.SHUT_RDWR)
         self.connected = False
         self.sock = None

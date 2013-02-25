@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 __author__ = 'Robin Wittler'
@@ -13,11 +13,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 BASE_FORMAT_SYSLOG = (
-    '%(name)s.%(funcName)s[PID: %(process)d | lineno: %(lineno)d] ' +
+    '%(name)s.%(funcName)s[PID: %(process)d] ' +
     '%(levelname)s: %(message)s'
 )
 
 BASE_FORMAT_STDOUT = '%(asctime)s ' + BASE_FORMAT_SYSLOG
+
+EXTENDED_FORMAT_SYSLOG = (
+    '%(name)s.%(funcName)s[PID: %(process)d | lineno: %(lineno)d] ' +
+    '%(levelname)s: %(message)s'
+)
+
+EXTENDED_FORMAT_STDOUT = '%(asctime)s ' + BASE_FORMAT_SYSLOG
+
 
 def set_logfile_permissions(path):
     os.chown(path, os.getuid(), os.getgid())

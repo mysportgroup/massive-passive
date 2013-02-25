@@ -7,7 +7,7 @@ from distutils.core import setup
 
 setup(
         name='massive-passive',
-        version='0.3.0',
+        version='0.3.1',
         description='A scheduler for passive nagios/icinga checks. This includes a server and client.',
         author='Robin Wittler',
         author_email='r.wittler@mysportgroup.de',
@@ -20,6 +20,7 @@ setup(
         data_files=[
             ('/usr/sbin', ['massive-passive-client', 'massive-passive-server']),
             ('/etc/massive-passive/checks.d', ['etc/massive-passive/checks.d/first_check.cfg', 'etc/massive-passive/checks.d/second_check.cfg']),
+            ('/etc/massive-passive/allowed-client-cert.d', []),
             ('/etc/init.d', ['etc/init.d/massive-passive-client', 'etc/init.d/massive-passive-server']),
             ('/etc/default', ['etc/default/massive-passive-client', 'etc/default/massive-passive-server']),
             ('/usr/share/massive-passive-client', ['LICENSE.txt', 'README.txt']),
