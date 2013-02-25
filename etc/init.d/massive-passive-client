@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          massive-passive
+# Provides:          massive-passive-client
 # Required-Start:    $all
 # Required-Stop:
 # Default-Start:     2 3 4 5
@@ -14,7 +14,7 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="The Client and scheduler for passive nagios/icinga checks."  # Introduce a short description here
+DESC="a client and scheduler for passive nagios/icinga checks."  # Introduce a short description here
 NAME=massive-passive-client             # Introduce the short server's name here
 DAEMON=/usr/sbin/massive-passive-client # Introduce the server's location here
 DAEMON_ARGS=""             # Arguments to run the daemon with
@@ -38,7 +38,13 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
-        log_daemon_msg "Starting $DESC " "$NAME\n"
+    log_daemon_msg "Starting $DESC " "$NAME\n"
+
+    if [ ! "$START" = "true" ]; then
+        log_daemon_msg "$NAME - this service is disabled. Enable it in /etc/default/$NAME\n"
+        return 2
+    fi
+
 	# Return
 	#   0 if daemon has been started
 	#   1 if daemon was already running
@@ -64,7 +70,7 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
 	RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
 	# Wait for children to finish too if this is a daemon that forks
@@ -73,7 +79,7 @@ do_stop()
 	# that waits for the process to drop all resources that could be
 	# needed by services started subsequently.  A last resort is to
 	# sleep for some time.
-	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
+	#start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
 	[ "$?" = 2 ] && return 2
 	# Many daemons don't delete their pidfiles when they exit.
 	rm -f $PIDFILE
@@ -89,7 +95,7 @@ do_reload() {
 	# restarting (for example, when it is sent a SIGHUP),
 	# then implement that here.
 	#
-	start-stop-daemon --stop --signal 1 --quiet --pidfile $PIDFILE --name $NAME
+	start-stop-daemon --stop --signal 1 --quiet --pidfile $PIDFILE
 	return 0
 }
 
@@ -110,9 +116,9 @@ case "$1" in
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	esac
 	;;
-  status)
-       status_of_proc "$DAEMON" "$NAME\n" && exit 0 || exit $?
-       ;;
+  #status)
+  #     status_of_proc "$DAEMON" "$NAME\n" && exit 0 || exit $?
+  #     ;;
   reload)
 	#
 	# If do_reload() is not implemented then leave this commented out
@@ -146,7 +152,7 @@ case "$1" in
 	;;
   *)
 	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
 	exit 3
 	;;
 esac
