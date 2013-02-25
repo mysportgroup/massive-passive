@@ -121,7 +121,13 @@ class SSLValidationStore(object):
         with open(cacert, 'r', 1) as  fp:
             self.cacert = load_certificate(FILETYPE_PEM, fp.read())
 
-        self.cacert_key_identifier = self.cacert.get_extension(1).get_data()
+        try:
+            self.cacert_key_identifier = self.cacert.get_extension(1).get_data()
+        except AttributeError:
+            # the debian squeeze python-openssl version has no get_extension attribute :(
+            # so ... we set cacert_key_identifier to None.
+            # On later code we check if this attr is None, if so, we only check subject string.
+            self.cacert_key_identifier = None
 
         self._store_lock = Lock()
         self._store = dict()
@@ -162,12 +168,20 @@ class SSLValidationStore(object):
                 continue
 
             cert_subject_components = self.join_cert_subject_components(cert)
-            subject_key_identifier = cert.get_extension(2).get_data()
-            self.logger.info('Adding (%r, %r, %r) to store.', cert_subject_components, subject_key_identifier, filename)
-            result.setdefault(
-                cert_subject_components,
-                dict(filename=filename, subject_key_identifier=subject_key_identifier)
-            )
+            if self.cacert_key_identifier is not None:
+                subject_key_identifier = cert.get_extension(2).get_data()
+                self.logger.info('Adding (%r, %r, %r) to store.', cert_subject_components, subject_key_identifier, filename)
+                result.setdefault(
+                    cert_subject_components,
+                    dict(filename=filename, subject_key_identifier=subject_key_identifier)
+                )
+            else:
+                self.logger.info('Adding (%r,%r) to store.', cert_subject_components, filename)
+                result.setdefault(
+                    cert_subject_components,
+                    dict(filename=filename)
+                )
+
         self._store_lock.acquire()
         try:
             self._store = result
@@ -188,21 +202,22 @@ class SSLValidationStore(object):
             return False
 
         filename = validation_data.get('filename')
-        subject_key_identifier = validation_data.get('subject_key_identifier')
 
-        if subject_key_identifier != cert.get_extension(2).get_data():
-            self.logger.info(
-                'SubjectKeyIdentifier of %r mismatch received certificate %r',
-                filename,
-                cert.get_subject()
-            )
-            return False
-        else:
-            self.logger.debug(
-                'SubjectKeyIdentifier of certificate %r matches received SubjectKeyIdentifier of certificate %r',
-                filename,
-                cert.get_subject()
-            )
+        if self.cacert_key_identifier is not None:
+            subject_key_identifier = validation_data.get('subject_key_identifier')
+            if subject_key_identifier != cert.get_extension(2).get_data():
+                self.logger.info(
+                    'SubjectKeyIdentifier of %r mismatch received certificate %r',
+                    filename,
+                    cert.get_subject()
+                )
+                return False
+            else:
+                self.logger.debug(
+                    'SubjectKeyIdentifier of certificate %r matches received SubjectKeyIdentifier of certificate %r',
+                    filename,
+                    cert.get_subject()
+                )
         self.logger.info('Certificate %r is authorized through file %r. Go ahead.', cert.get_subject(),filename)
         return True
 
