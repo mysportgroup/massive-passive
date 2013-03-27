@@ -212,7 +212,7 @@ class Main(SendNscaModeMain):
         )
 
     def add_job_from_event(self, event):
-        self.logger.debug('Adding job triggered by event: %r', event)
+        self.logger.info('Adding job triggered by event: %r', event)
         self.scheduler.remove_job(event.pathname)
         self.scheduler.add_passive_checks(
             {1: ConfigFile(event.pathname)},
@@ -220,7 +220,7 @@ class Main(SendNscaModeMain):
         )
 
     def remove_job_from_event(self, event):
-        self.logger.debug('Removing job triggered by event: %r', event)
+        self.logger.info('Removing job triggered by event: %r', event)
         self.scheduler.remove_job(event.pathname)
 
     def start_send_worker(self):

@@ -39,28 +39,19 @@ class ProcessEvent(pyinotify.ProcessEvent):
         self.callbacks = callbacks
 
     @filename_endswith('.cfg')
-    def process_IN_CLOSE_WRITE(self, event):
+    def process_default(self, event):
         self.logger.debug(
-            'Received IN_CLOSE_WRITE event for %r', event.name
+            'Received %r event for %r', event.maskname, event.name
         )
 
-        self.call_callback('IN_CLOSE_WRITE', event)
+        return self.call_callback(event)
 
-    @filename_endswith('.cfg')
-    def process_IN_DELETE(self, event):
-        self.logger.debug(
-            'Received IN_DELETE event for %r', event.name
-        )
-
-        self.call_callback('IN_DELETE', event)
-
-    def call_callback(self, event_type, event):
-        callback = self.callbacks.get(event_type, None)
-
+    def call_callback(self, event):
+        callback = self.callbacks.get(event.maskname, None)
         if callback is None:
-            self.logger.debug('No callback found for event_type %r', event_type)
+            self.logger.debug('No callback found for event_type %r', event.maskname)
         elif not callable(callback):
-            self.logger.debug('Callback %r for event_type %r is not callable.', callback, event_type)
+            self.logger.debug('Callback %r for event_type %r is not callable.', callback, event.maskname)
         else:
             return callback(event)
 
