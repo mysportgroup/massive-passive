@@ -6,8 +6,6 @@ __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
 
-import os
-import sys
 import logging
 import pyinotify
 from functools import wraps
@@ -84,5 +82,6 @@ if __name__ == '__main__':
     watch_manager.add_watch('/tmp/watchdir', pyinotify.IN_CLOSE_WRITE|pyinotify.IN_DELETE, rec=False, auto_add=True)
     while True:
         time.sleep(0.1)
+        #notifier.stop()
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
