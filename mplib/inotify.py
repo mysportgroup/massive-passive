@@ -10,12 +10,27 @@ import os
 import sys
 import logging
 import pyinotify
-
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
+
+class FilenameEndsWithDecorator(object):
+    def __init__(self, ending):
+        self.ending = ending
+
+    def __call__(self, func):
+        @wraps(func)
+        def wrapped(*targs, **kwargs):
+            if not targs[-1].name.endswith(self.ending):
+                return None
+            return func(*targs, **kwargs)
+        return wrapped
+
+filename_endswith = FilenameEndsWithDecorator
+
 class ProcessEvent(pyinotify.ProcessEvent):
-    def my_init(self, **kwargs):
+    def my_init(self, callbacks=None):
         self.logger = logging.getLogger(
             '%s.%s' %(
                 self.__class__.__module__,
@@ -23,23 +38,33 @@ class ProcessEvent(pyinotify.ProcessEvent):
             )
         )
 
-        self.logger.debug('Initialized with this kwargs: %r', kwargs)
+        self.callbacks = callbacks
 
-    def process_IN_MODIFY(self, event):
-        if not event.name.endswith('.cfg'):
-            # silently ignore everything which ends not with '.cfg'
-            return None
-        print "in modify: %r" %(event,)
-        pass
-
+    @filename_endswith('.cfg')
     def process_IN_CLOSE_WRITE(self, event):
-        print "in close write: %r" %(event,)
-        pass
+        self.logger.debug(
+            'Received IN_CLOSE_WRITE event for %r', event.name
+        )
 
+        self.call_callback('IN_CLOSE_WRITE', event)
+
+    @filename_endswith('.cfg')
     def process_IN_DELETE(self, event):
-        print "in delete: %r" %(event,)
-        pass
+        self.logger.debug(
+            'Received IN_DELETE event for %r', event.name
+        )
 
+        self.call_callback('IN_DELETE', event)
+
+    def call_callback(self, event_type, event):
+        callback = self.callbacks.get(event_type, None)
+
+        if callback is None:
+            self.logger.debug('No callback found for event_type %r', event_type)
+        elif not callable(callback):
+            self.logger.debug('Callback %r for event_type %r is not callable.', callback, event_type)
+        else:
+            return callback(event)
 
 class WatchManager(pyinotify.WatchManager):
     pass
@@ -48,59 +73,16 @@ class ThreadedNotifier(pyinotify.ThreadedNotifier):
     pass
 
 
-## Do the same thing than stats.py but with a ThreadedNotifier's
-## instance.
-## This example illustrates the use of this class but the recommanded
-## implementation is whom of stats.py
-
-#class Identity(pyinotify.ProcessEvent):
-#    def process_default(self, event):
-#        # Does nothing, just to demonstrate how stuffs could be done
-#        # after having processed statistics.
-#        print 'Does nothing.'
-
-## Thread #1
-#wm1 = pyinotify.WatchManager()
-#s1 = pyinotify.Stats() # Stats is a subclass of ProcessEvent
-#notifier1 = pyinotify.ThreadedNotifier(wm1, default_proc_fun=Identity(s1))
-#notifier1.start()
-#wm1.add_watch('/tmp/', pyinotify.ALL_EVENTS, rec=True, auto_add=True)
-
-## Thread #2
-#wm2 = pyinotify.WatchManager()
-#s2 = pyinotify.Stats() # Stats is a subclass of ProcessEvent
-#notifier2 = pyinotify.ThreadedNotifier(wm2, default_proc_fun=Identity(s2))
-#notifier2.start()
-#wm2.add_watch('/var/log/', pyinotify.ALL_EVENTS, rec=False, auto_add=False)
-
-#while True:
-#    try:
-#        print "Thread 1", repr(s1)
-#        print s1
-#        print "Thread 2", repr(s2)
-#        print s2
-#        print
-#        time.sleep(5)
-#    except KeyboardInterrupt:
-#        notifier1.stop()
-#        notifier2.stop()
-#        break
-#    except:
-#        notifier1.stop()
-#        notifier2.stop()
-#        raise
-
 if __name__ == '__main__':
     import time
+    from log import BASE_FORMAT_STDOUT
+    logging.basicConfig(level=logging.DEBUG, format=BASE_FORMAT_STDOUT)
+
     watch_manager = WatchManager()
     notifier = ThreadedNotifier(watch_manager, default_proc_fun=ProcessEvent())
     notifier.start()
-    watch_manager.add_watch('/tmp/', pyinotify.ALL_EVENTS, rec=False, auto_add=True)
+    watch_manager.add_watch('/tmp/watchdir', pyinotify.IN_CLOSE_WRITE|pyinotify.IN_DELETE, rec=False, auto_add=True)
     while True:
         time.sleep(0.1)
 
-
-
-
-
-    # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
