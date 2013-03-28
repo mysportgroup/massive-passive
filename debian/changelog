@@ -1,3 +1,9 @@
+massive-passive (0.3.2-1) stable; urgency=low
+
+  * new upstream release 0.3.2
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Thu, 28 Mar 2013 12:17:55 +0100
+
 massive-passive (0.3.1-1) stable; urgency=low
 
   * new upstream release 0.3.1

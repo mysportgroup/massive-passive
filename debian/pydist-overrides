@@ -4,3 +4,4 @@ setproctitle python-setproctitle
 Twisted python-twisted
 pyOpenSSL python-openssl
 IPy python-ipy
+pyinotify python-pyinotify
