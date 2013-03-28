@@ -159,7 +159,7 @@ class SSLValidationStore(object):
                 self.logger.info('Could not load certificate from %r. Error was: %r', filename, error)
                 return None
             else:
-                self.logger.info('Successfully loaded certificate from %r', filename)
+                self.logger.debug('Successfully loaded certificate from %r', filename)
                 return cert
 
     def validate_cert_ca(self, cert):
@@ -211,7 +211,7 @@ class SSLValidationStore(object):
             for cert_subject_components, cert_dict in self._store.iteritems():
                 if cert_dict.get('filename') == filename:
                     self.logger.info(
-                        'Removing %r from store.', cert_subject_components
+                        'Removing %r (filename: %r) from store.', cert_subject_components, filename
                     )
                     self._store.pop(cert_subject_components)
                     break
