@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 BASE_FORMAT_SYSLOG = (
-    '%(name)s.%(funcName)s[PID: %(process)d] ' +
+    '%(name)s.%(funcName)s[%(process)d] ' +
     '%(levelname)s: %(message)s'
 )
 

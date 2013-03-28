@@ -23,6 +23,7 @@ class MassivePassiveScheduler(Scheduler):
     def __init__(self, queue, **kwargs):
         super(MassivePassiveScheduler, self).__init__(**kwargs)
         self.queue = queue
+        self.jobs = dict()
         self.logger = logging.getLogger(
             '%s.%s'
             %(self.__class__.__module__, self.__class__.__name__)
@@ -40,7 +41,7 @@ class MassivePassiveScheduler(Scheduler):
                 )
 
                 try:
-                    self.add_interval_check(
+                    job = self.add_interval_check(
                         check,
                         wait_range_start=wait_range_start,
                         wait_range_end=wait_range_end
@@ -51,6 +52,8 @@ class MassivePassiveScheduler(Scheduler):
                         'There was an error while adding %d. check %r as an interval based check. Error was: %s',
                         enum, check.path, error
                     )
+                else:
+                    self.jobs.update({check.path: job})
 
             elif isinstance(interval, dict):
                 self.logger.info(
@@ -58,19 +61,36 @@ class MassivePassiveScheduler(Scheduler):
                     %(enum, check.path, ', '.join(('%s=%r' %(k,v) for k,v in interval.iteritems())))
                 )
                 try:
-                    self.add_cron_check(check)
+                    job = self.add_cron_check(check)
                 except Exception as error:
                     self.logger.exception(error)
                     self.logger.error(
                         'There was an error while adding %d. check %r as a cron based check. Error was: %s',
                         enum, check.path, error
                     )
+                else:
+                    self.jobs.update({check.path: job})
 
             else:
                 self.logger.error(
                     '%d. check %r is has no valid interval attribute. Ignoring it.',
                     enum, check.path
                 )
+
+    def remove_job(self, job_path):
+        job = self.jobs.pop(job_path, None)
+        if job is None:
+            self.logger.info('Can not remove job %r - no such job found.', job_path)
+            return False
+        self.logger.info('Removing job %r from scheduler.', job)
+        self.unschedule_job(job)
+
+        return True
+
+    def remove_all_jobs(self):
+        for job_path, job in self.jobs.iteritems():
+            self.unschedule_job(job)
+            self.jobs.pop(job_path)
 
     def add_interval_check(self, check, wait_range_start=2, wait_range_end=10):
         self.schedule_passive_check_initially(
@@ -79,7 +99,7 @@ class MassivePassiveScheduler(Scheduler):
             wait_range_end=wait_range_end
         )
 
-        self.add_interval_job(
+        return self.add_interval_job(
             passive_check_cmd,
             seconds=check.get('interval'),
             max_instances=check.get('max_instances', 1),
@@ -100,7 +120,7 @@ class MassivePassiveScheduler(Scheduler):
         start_date = interval.get('start_date', None)
         args = (check, self.queue)
 
-        self.add_cron_job(
+        return self.add_cron_job(
             passive_check_cmd,
             year=year,
             month=month,

@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 import os
 import sys
@@ -25,6 +25,11 @@ from mplib.net.server import SSLServerContextFactory
 from mplib.net.server import ExternalCommandWriterFactory
 
 
+from pyinotify import IN_DELETE
+from pyinotify import IN_CLOSE_WRITE
+from mplib.inotify import WatchManager
+from mplib.inotify import ThreadedNotifier
+from mplib.inotify import ProcessPemEvents
 
 
 logger = logging.getLogger(__name__)
@@ -40,24 +45,57 @@ class Main(object):
                 self.__class__.__name__
                 )
         )
+
         self.options = options
         self.stop_event = Event()
         self.factory = ExternalCommandWriterFactory(
             self.options.command_file,
         )
-        self.ssl_validation_store = SSLValidationStore(self.options.allowed_client_cert_dir, self.options.ssl_ca_cert)
-        self.ssl_callback = SSLCallbacks(self.ssl_validation_store)
-        self.ssl_factory = SSLServerContextFactory(
-            self.options.ssl_key, self.options.ssl_cert, self.options.ssl_ca_cert, checkCallback=self.ssl_callback.verifyCallback
+
+        self.ssl_validation_store = SSLValidationStore(
+            self.options.allowed_client_cert_dir,
+            self.options.ssl_ca_cert
         )
 
+        self.ssl_callback = SSLCallbacks(self.ssl_validation_store)
+        self.ssl_factory = SSLServerContextFactory(
+            self.options.ssl_key,
+            self.options.ssl_cert,
+            self.options.ssl_ca_cert,
+            checkCallback=self.ssl_callback.verifyCallback
+        )
+
+        self.watch_manager = WatchManager()
+        callbacks = {
+            'IN_CLOSE_WRITE': self.add_pem_from_event,
+            'IN_DELETE': self.remove_pem_from_event,
+            }
+
+        self.notifier = ThreadedNotifier(
+            self.watch_manager,
+            default_proc_fun=ProcessPemEvents(callbacks=callbacks)
+        )
+
+        self.watch_manager.add_watch(
+            options.allowed_client_cert_dir,
+            IN_CLOSE_WRITE|IN_DELETE,
+            rec=False,
+            auto_add=True
+        )
+
+    def add_pem_from_event(self, event):
+        return self.ssl_validation_store.add_pem(event.pathname)
+
+    def remove_pem_from_event(self, event):
+        return self.ssl_validation_store.remove_pem(event.pathname)
 
     def run(self):
         self.logger.info('Startup!')
         self.set_proc_title()
-        self.drop_rights()
         if self.options.foreground is False:
+            self.drop_rights()
             self.write_pidfile()
+        self.notifier.start()
         context = self.ssl_factory.buildContext()
 
         reactor.listenSSL(
@@ -119,6 +157,9 @@ class Main(object):
         self.logger.info('Going down now ...')
         self.stop_event.set()
         self.logger.debug('Stop Event set.')
+        self.logger.info('Stopping notifier ...')
+        self.notifier.stop()
+        self.logger.info('Notifier stopped.')
         self.logger.debug('Stopping reactor ...')
         reactor.stop()
 

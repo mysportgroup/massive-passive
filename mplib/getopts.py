@@ -185,14 +185,14 @@ def server_getopt(usage=None, description=None, version=None, epilog=None):
                     options.command_file or ' or '.join(options.command_file_defaults)
                 )
             )
-    else:
-        parser.exit(
-            status=2,
-            msg=(
-                '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
-                %(parser.format_help(),)
-            )
-        )
+    #else:
+    #    parser.exit(
+    #        status=2,
+    #        msg=(
+    #            '\nERROR: You must set the path to the nagios/icinga external command file.\n\n%s\n'
+    #            %(parser.format_help(),)
+    #        )
+    #    )
 
     if not options.ssl_ca_cert:
         parser.exit(
