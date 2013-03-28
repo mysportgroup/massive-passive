@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 import os
 import sys
@@ -24,11 +24,11 @@ from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
 from mplib.scheduler import ThreadPool
 from mplib.inotify import WatchManager
-from mplib.inotify import ProcessEvent
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNativeWorker
 from mplib.inotify import ThreadedNotifier
 from mplib.log import set_logfile_permissions
+from mplib.inotify import ProcessConfigEvents
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
 from mplib.net.client import PassiveCheckSubmitClient
@@ -141,7 +141,7 @@ class Main(SendNscaModeMain):
         }
         self.notifier = ThreadedNotifier(
             self.watch_manager,
-            default_proc_fun=ProcessEvent(callbacks=callbacks)
+            default_proc_fun=ProcessConfigEvents(callbacks=callbacks)
         )
         self.watch_manager.add_watch(
             options.confdir,

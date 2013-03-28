@@ -27,7 +27,7 @@ class FilenameEndsWithDecorator(object):
 
 filename_endswith = FilenameEndsWithDecorator
 
-class ProcessEvent(pyinotify.ProcessEvent):
+class ProcessConfigEvents(pyinotify.ProcessEvent):
     def my_init(self, callbacks=None):
         self.logger = logging.getLogger(
             '%s.%s' %(
@@ -55,6 +55,16 @@ class ProcessEvent(pyinotify.ProcessEvent):
         else:
             return callback(event)
 
+class ProcessPemEvents(ProcessConfigEvents):
+    @filename_endswith('.pem')
+    def process_default(self, event):
+        self.logger.debug(
+            'Received %r event for %r', event.maskname, event.name
+        )
+
+        return self.call_callback(event)
+
+
 class WatchManager(pyinotify.WatchManager):
     pass
 
@@ -68,7 +78,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format=BASE_FORMAT_STDOUT)
 
     watch_manager = WatchManager()
-    notifier = ThreadedNotifier(watch_manager, default_proc_fun=ProcessEvent())
+    notifier = ThreadedNotifier(watch_manager, default_proc_fun=ProcessConfigEvents())
     notifier.start()
     watch_manager.add_watch('/tmp/watchdir', pyinotify.IN_CLOSE_WRITE|pyinotify.IN_DELETE, rec=False, auto_add=True)
     while True:

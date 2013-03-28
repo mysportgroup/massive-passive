@@ -150,41 +150,75 @@ class SSLValidationStore(object):
         except IndexError:
             return False
 
-    def add_pems_from_basedir(self):
-        result = dict()
-        for filename in glob(os.path.join(self.basedir, '*.pem')):
-            self.logger.debug('Trying to load %r.', filename)
-            with open(filename, 'r', 1) as fp:
-                try:
-                    cert = load_certificate(FILETYPE_PEM, fp.read())
-                except SSLError as error:
-                    self.logger.debug('Could not load certificate at %r. Error was: %r', filename, error)
-                    continue
-            if self.cacert_key_identifier is not None and not self.is_cert_from_ca(cert):
-                self.logger.info(
-                    'Authority Key Identifier mismatch for certificate %r. Ignoring certificate.',
-                    filename
-                )
-                continue
-
-            cert_subject_components = self.join_cert_subject_components(cert)
-            if self.cacert_key_identifier is not None:
-                subject_key_identifier = cert.get_extension(2).get_data()
-                self.logger.info('Adding (%r, %r, %r) to store.', cert_subject_components, subject_key_identifier, filename)
-                result.setdefault(
-                    cert_subject_components,
-                    dict(filename=filename, subject_key_identifier=subject_key_identifier)
-                )
+    def load_pem(self, filename):
+        self.logger.debug('Trying to load %r.', filename)
+        with open(filename, 'r', 1) as fp:
+            try:
+                cert = load_certificate(FILETYPE_PEM, fp.read())
+            except SSLError as error:
+                self.logger.info('Could not load certificate from %r. Error was: %r', filename, error)
+                return None
             else:
-                self.logger.info('Adding (%r,%r) to store.', cert_subject_components, filename)
-                result.setdefault(
-                    cert_subject_components,
-                    dict(filename=filename)
-                )
+                self.logger.info('Successfully loaded certificate from %r', filename)
+                return cert
+
+    def validate_cert_ca(self, cert):
+        if self.cacert_key_identifier is not None and not self.is_cert_from_ca(cert):
+            return False
+        return True
+
+    def add_cert_info_to_store(self, filename, cert):
+        cert_subject_components = self.join_cert_subject_components(cert)
+        if self.cacert_key_identifier is not None:
+            subject_key_identifier = cert.get_extension(2).get_data()
+        else:
+            subject_key_identifier = None
+
+        cert_dict = dict(filename=filename, subject_key_identifier=subject_key_identifier)
+
+        self.logger.info(
+            'Adding (%r, %r) to store.', cert_subject_components, cert_dict
+        )
 
         self._store_lock.acquire()
         try:
-            self._store = result
+            self._store.update({cert_subject_components: cert_dict})
+        finally:
+            self._store_lock.release()
+
+    def add_pems_from_basedir(self):
+        for filename in glob(os.path.join(self.basedir, '*.pem')):
+            self.add_pem(filename)
+
+    def add_pem(self, filename):
+        cert = self.load_pem(filename)
+        if cert is None:
+            return False
+
+        if self.validate_cert_ca(cert) is False:
+            self.logger.info(
+                'Authority Key Identifier mismatch for certificate %r. Ignoring certificate.',
+                filename
+            )
+            return False
+
+        self.add_cert_info_to_store(filename, cert)
+        return True
+
+    def remove_pem(self, filename):
+        self._store_lock.acquire()
+        try:
+            for cert_subject_components, cert_dict in self._store.iteritems():
+                if cert_dict.get('filename') == filename:
+                    self.logger.info(
+                        'Removing %r from store.', cert_subject_components
+                    )
+                    self._store.pop(cert_subject_components)
+                    break
+            else:
+                self.logger.info(
+                    'Could not found a cert for %r in store.', filename
+                )
         finally:
             self._store_lock.release()
 
