@@ -170,12 +170,10 @@ After configuring your first check, you can do:
     service massive-passive reload
 to reload the configs at runtime.
 
-
-HINT
-----
-
 From massive-passive version 0.3.2 on you don't have to reload the massive-passive-client by hand.
 The client watches the confdir and removes/add config changes on it's own.
+This also applies to the server, which can autoadd/remove ssl pems to/from the ssl store by filesystem
+events coming from the allowed-client-cert-dir.
 
 
 
