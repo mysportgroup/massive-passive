@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 import os
 import sys
@@ -16,13 +16,19 @@ from Queue import Queue
 from mplib import getopts
 from threading import Event
 from threading import Thread
+from pyinotify import IN_DELETE
 from mplib.config import ConfigDir
 from mplib.daemon import daemonize
+from mplib.config import ConfigFile
+from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
 from mplib.scheduler import ThreadPool
+from mplib.inotify import WatchManager
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNativeWorker
+from mplib.inotify import ThreadedNotifier
 from mplib.log import set_logfile_permissions
+from mplib.inotify import ProcessConfigEvents
 from logging.handlers import WatchedFileHandler
 from mplib.scheduler import MassivePassiveScheduler
 from mplib.net.client import PassiveCheckSubmitClient
@@ -128,6 +134,21 @@ class Main(SendNscaModeMain):
             max_results=self.options.batch_max_items
         )
         self._scheduler = scheduler
+        self.watch_manager = WatchManager()
+        callbacks = {
+            'IN_CLOSE_WRITE': self.add_job_from_event,
+            'IN_DELETE': self.remove_job_from_event,
+        }
+        self.notifier = ThreadedNotifier(
+            self.watch_manager,
+            default_proc_fun=ProcessConfigEvents(callbacks=callbacks)
+        )
+        self.watch_manager.add_watch(
+            options.confdir,
+            IN_CLOSE_WRITE|IN_DELETE,
+            rec=False,
+            auto_add=True
+        )
 
     def run(self):
         self.set_proc_title()
@@ -138,6 +159,7 @@ class Main(SendNscaModeMain):
         self.start_send_worker()
         self.start_scheduler()
         self.add_jobs_to_scheduler()
+        self.notifier.start()
         while not self.stop_event.is_set():
             sleep(0.1)
 
@@ -189,6 +211,18 @@ class Main(SendNscaModeMain):
             wait_range_end=self.options.initial_random_wait_range
         )
 
+    def add_job_from_event(self, event):
+        self.logger.info('Adding job triggered by event: %r', event)
+        self.scheduler.remove_job(event.pathname)
+        self.scheduler.add_passive_checks(
+            {1: ConfigFile(event.pathname)},
+            wait_range_end=self.options.initial_random_wait_range
+        )
+
+    def remove_job_from_event(self, event):
+        self.logger.info('Removing job triggered by event: %r', event)
+        self.scheduler.remove_job(event.pathname)
+
     def start_send_worker(self):
         self.logger.debug('Calling send_worker thread start ...')
         self.send_worker.start()
@@ -234,9 +268,12 @@ class Main(SendNscaModeMain):
         self.logger.info(
             'Received Signal %s ... reloading config now ...', signum
         )
-        self.stop_scheduler()
+
+        #self.stop_scheduler()
         #self.scheduler = self._scheduler(self.send_queue)
-        self.start_scheduler()
+        #self.start_scheduler()
+
+        self.scheduler.remove_all_jobs()
         self.add_jobs_to_scheduler()
         self.logger.info('Config reload done.')
 
@@ -245,6 +282,9 @@ class Main(SendNscaModeMain):
         self.logger.info('Going down now ...')
         self.stop_event.set()
         self.logger.debug('Stop Event set.')
+        self.logger.debug('Stopping notifier ...')
+        self.notifier.stop()
+        self.logger.debug('Notifier stopped.')
         self.stop_scheduler()
         self.stop_send_worker()
 
@@ -277,6 +317,8 @@ if __name__ == '__main__':
         daemonize(cwd='/')
         main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
         main.drop_rights()
+    elif options.foreground is True:
+        main = Main(sys.argv[0], options, SendNativeWorker, MassivePassiveScheduler)
     else:
         main = SendNscaModeMain(sys.argv[0], options, PassiveCheckSubmitClient)
 

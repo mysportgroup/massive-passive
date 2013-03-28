@@ -168,7 +168,15 @@ After configuring your first check, you can do:
     or (on debian)
     
     service massive-passive reload
-to reload the configs at runtime. 
+to reload the configs at runtime.
+
+
+HINT
+----
+
+From massive-passive version 0.3.2 on you don't have to reload the massive-passive-client by hand.
+The client watches the confdir and removes/add config changes on it's own.
+
 
 
 
