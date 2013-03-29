@@ -38,6 +38,13 @@ class ProcessConfigEvents(pyinotify.ProcessEvent):
 
         self.callbacks = callbacks
 
+    def __del__(self):
+        # prevent references to the logger in the root.manager.loggerDict
+        # and having memleaks.
+        logging.root.manager.loggerDict.pop(
+            '%s.%s' %(self.__class__.__module__, self.__class__.__name__)
+        )
+
     @filename_endswith('.cfg')
     def process_default(self, event):
         self.logger.debug(

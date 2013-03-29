@@ -22,11 +22,11 @@ from mplib.daemon import daemonize
 from mplib.config import ConfigFile
 from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
-from mplib.scheduler import ThreadPool
 from mplib.inotify import WatchManager
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNativeWorker
 from mplib.inotify import ThreadedNotifier
+from apscheduler.threadpool import ThreadPool
 from mplib.log import set_logfile_permissions
 from mplib.inotify import ProcessConfigEvents
 from logging.handlers import WatchedFileHandler
@@ -49,6 +49,13 @@ class SendNscaModeMain(object):
         self.send_queue = Queue()
         self.check_submit_client = check_submit_client
         self.active_threads = list()
+
+    def __del__(self):
+        # prevent references to the logger in the root.manager.loggerDict
+        # and having memleaks.
+        logging.root.manager.loggerDict.pop(
+            '%s.%s' %(self.name, self.__class__.__name__)
+        )
 
     def run(self):
         self.set_proc_title()
@@ -148,6 +155,13 @@ class Main(SendNscaModeMain):
             IN_CLOSE_WRITE|IN_DELETE,
             rec=False,
             auto_add=True
+        )
+
+    def __del__(self):
+        # prevent references to the logger in the root.manager.loggerDict
+        # and having memleaks.
+        logging.root.manager.loggerDict.pop(
+            '%s.%s' %(self.name, self.__class__.__name__)
         )
 
     def run(self):

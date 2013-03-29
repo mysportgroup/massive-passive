@@ -14,7 +14,6 @@ from random import randint
 from datetime import datetime
 from mplib.cmd import passive_check_cmd
 from apscheduler.scheduler import Scheduler
-from apscheduler.threadpool import ThreadPool
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,13 @@ class MassivePassiveScheduler(Scheduler):
         self.logger = logging.getLogger(
             '%s.%s'
             %(self.__class__.__module__, self.__class__.__name__)
+        )
+
+    def __del__(self):
+        # prevent references to the logger in the root.manager.loggerDict
+        # and having memleaks.
+        logging.root.manager.loggerDict.pop(
+            '%s.%s' %(self.__class__.__module__, self.__class__.__name__)
         )
 
     def add_passive_checks(self, checks_config, wait_range_start=2, wait_range_end=10):
