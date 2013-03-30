@@ -19,8 +19,6 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
-        service massive-passive-client stop
-        insserv -r -d /etc/init.d/massive-passive-client
     ;;
 
     failed-upgrade)
