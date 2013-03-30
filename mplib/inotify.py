@@ -73,16 +73,6 @@ class ThreadedNotifier(pyinotify.ThreadedNotifier):
 
 
 if __name__ == '__main__':
-    import time
-    from log import BASE_FORMAT_STDOUT
-    logging.basicConfig(level=logging.DEBUG, format=BASE_FORMAT_STDOUT)
-
-    watch_manager = WatchManager()
-    notifier = ThreadedNotifier(watch_manager, default_proc_fun=ProcessConfigEvents())
-    notifier.start()
-    watch_manager.add_watch('/tmp/watchdir', pyinotify.IN_CLOSE_WRITE|pyinotify.IN_DELETE, rec=False, auto_add=True)
-    while True:
-        time.sleep(0.1)
-        #notifier.stop()
+    pass
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4

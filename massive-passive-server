@@ -5,31 +5,31 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 
 import os
 import sys
 import signal
 import logging
-from mplib import getopts
 from threading import Event
+from pyinotify import IN_DELETE
 from mplib.daemon import daemonize
 from twisted.internet import reactor
+from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
+from mplib.inotify import WatchManager
+from mplib.getopts import get_gpl3_text
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.net.server import SSLCallbacks
+from mplib.inotify import ThreadedNotifier
+from mplib.inotify import ProcessPemEvents
 from mplib.log import set_logfile_permissions
+from mplib.getopts.server import server_getopt
 from logging.handlers import WatchedFileHandler
 from mplib.net.server import SSLValidationStore
 from mplib.net.server import SSLServerContextFactory
+from mplib.getopts.server import get_server_description
 from mplib.net.server import ExternalCommandWriterFactory
-
-
-from pyinotify import IN_DELETE
-from pyinotify import IN_CLOSE_WRITE
-from mplib.inotify import WatchManager
-from mplib.inotify import ThreadedNotifier
-from mplib.inotify import ProcessPemEvents
 
 
 logger = logging.getLogger(__name__)
@@ -174,10 +174,10 @@ class Main(object):
 
 
 if __name__ == '__main__':
-    options, args = getopts.server_getopt(
+    options, args = server_getopt(
         version='%prog ' + __version__,
-        description=getopts.get_server_description(),
-        epilog=getopts.get_gpl3_text()
+        description=get_server_description(),
+        epilog=get_gpl3_text()
     )
 
     logging.basicConfig(level=options.loglevel, format=BASE_FORMAT_STDOUT)

@@ -14,7 +14,6 @@ from random import randint
 from datetime import datetime
 from mplib.cmd import passive_check_cmd
 from apscheduler.scheduler import Scheduler
-from apscheduler.threadpool import ThreadPool
 
 logger = logging.getLogger(__name__)
 
