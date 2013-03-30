@@ -13,7 +13,6 @@ import signal
 import logging
 from time import sleep
 from Queue import Queue
-from mplib import getopts
 from threading import Event
 from threading import Thread
 from pyinotify import IN_DELETE
@@ -23,16 +22,18 @@ from mplib.config import ConfigFile
 from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
 from mplib.inotify import WatchManager
+from mplib.getopts import get_gpl3_text
 from mplib.log import BASE_FORMAT_STDOUT
-from mplib.threads import SendNativeWorker
 from mplib.inotify import ThreadedNotifier
 from apscheduler.threadpool import ThreadPool
 from mplib.log import set_logfile_permissions
 from mplib.inotify import ProcessConfigEvents
+from mplib.getopts.client import client_getopt
 from logging.handlers import WatchedFileHandler
+from mplib.threads.client import SendNativeWorker
 from mplib.scheduler import MassivePassiveScheduler
 from mplib.net.client import PassiveCheckSubmitClient
-
+from mplib.getopts.client import get_client_description
 
 class SendNscaModeMain(object):
     def __init__(self, name, options, check_submit_client):
@@ -294,10 +295,10 @@ class Main(SendNscaModeMain):
         self.logger.info('Exiting now!')
 
 if __name__ == '__main__':
-    options, args = getopts.client_getopt(
+    options, args = client_getopt(
         version='%prog ' + __version__,
-        description=getopts.get_client_description(),
-        epilog=getopts.get_gpl3_text()
+        description=get_client_description(),
+        epilog=get_gpl3_text()
     )
 
     if options.silent is False:
