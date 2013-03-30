@@ -22,11 +22,11 @@ from mplib.daemon import daemonize
 from mplib.config import ConfigFile
 from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
-from mplib.scheduler import ThreadPool
 from mplib.inotify import WatchManager
 from mplib.log import BASE_FORMAT_STDOUT
 from mplib.threads import SendNativeWorker
 from mplib.inotify import ThreadedNotifier
+from apscheduler.threadpool import ThreadPool
 from mplib.log import set_logfile_permissions
 from mplib.inotify import ProcessConfigEvents
 from logging.handlers import WatchedFileHandler
@@ -268,10 +268,6 @@ class Main(SendNscaModeMain):
         self.logger.info(
             'Received Signal %s ... reloading config now ...', signum
         )
-
-        #self.stop_scheduler()
-        #self.scheduler = self._scheduler(self.send_queue)
-        #self.start_scheduler()
 
         self.scheduler.remove_all_jobs()
         self.add_jobs_to_scheduler()
