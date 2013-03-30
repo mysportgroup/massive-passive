@@ -41,6 +41,11 @@ class WorkerJoiner(Thread):
                     self.logger.debug('Joining process %r ...', process)
                     process.join()
                     self.logger.debug('Joined process %r.', process)
+                    # prevent references to the logger in the root.manager.loggerDict
+                    # and having memleaks.
+                    logging.root.manager.loggerDict.pop(
+                        '%s.%s' %(process.__module__, process.name)
+                    )
                 else:
                     self.in_queue.put(process)
 
@@ -61,11 +66,6 @@ class SendNativeExecutor(Thread):
             '%s.%s'
             %(self.__module__, self.name)
         )
-
-    def __del__(self):
-        # prevent references to the logger in the root.manager.loggerDict
-        # and having memleaks.
-        logging.root.manager.loggerDict.pop('%s.%s' %(self.__module__, self.name))
 
     def run(self):
         self.logger.debug('Starting for socket %r and message %r', self.socket, self.message)
@@ -122,11 +122,6 @@ class SendNativeWorker(Thread):
             '%s.%s'
             %(self.__module__, self.name)
         )
-
-    def __del__(self):
-        # prevent references to the logger in the root.manager.loggerDict
-        # and having memleaks.
-        logging.root.manager.loggerDict.pop('%s.%s' %(self.__module__, self.name))
 
     def _put_into_out_queue(self, workers):
         for worker in workers:

@@ -50,13 +50,6 @@ class SendNscaModeMain(object):
         self.check_submit_client = check_submit_client
         self.active_threads = list()
 
-    def __del__(self):
-        # prevent references to the logger in the root.manager.loggerDict
-        # and having memleaks.
-        logging.root.manager.loggerDict.pop(
-            '%s.%s' %(self.name, self.__class__.__name__)
-        )
-
     def run(self):
         self.set_proc_title()
         self.logger.info('Startup!')
@@ -155,13 +148,6 @@ class Main(SendNscaModeMain):
             IN_CLOSE_WRITE|IN_DELETE,
             rec=False,
             auto_add=True
-        )
-
-    def __del__(self):
-        # prevent references to the logger in the root.manager.loggerDict
-        # and having memleaks.
-        logging.root.manager.loggerDict.pop(
-            '%s.%s' %(self.name, self.__class__.__name__)
         )
 
     def run(self):
@@ -282,10 +268,6 @@ class Main(SendNscaModeMain):
         self.logger.info(
             'Received Signal %s ... reloading config now ...', signum
         )
-
-        #self.stop_scheduler()
-        #self.scheduler = self._scheduler(self.send_queue)
-        #self.start_scheduler()
 
         self.scheduler.remove_all_jobs()
         self.add_jobs_to_scheduler()

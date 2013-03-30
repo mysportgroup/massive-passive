@@ -83,13 +83,6 @@ class Main(object):
             auto_add=True
         )
 
-    def __del__(self):
-        # prevent references to the logger in the root.manager.loggerDict
-        # and having memleaks.
-        logging.root.manager.loggerDict.pop(
-            '%s.%s' %(self.name, self.__class__.__name__)
-        )
-
     def add_pem_from_event(self, event):
         return self.ssl_validation_store.add_pem(event.pathname)
 

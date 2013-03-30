@@ -28,13 +28,6 @@ class MassivePassiveScheduler(Scheduler):
             %(self.__class__.__module__, self.__class__.__name__)
         )
 
-    def __del__(self):
-        # prevent references to the logger in the root.manager.loggerDict
-        # and having memleaks.
-        logging.root.manager.loggerDict.pop(
-            '%s.%s' %(self.__class__.__module__, self.__class__.__name__)
-        )
-
     def add_passive_checks(self, checks_config, wait_range_start=2, wait_range_end=10):
         for enum, check in checks_config.iteritems():
             self.logger.debug('Processing %d. check %r ...', enum, check)
