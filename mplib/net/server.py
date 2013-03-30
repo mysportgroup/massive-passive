@@ -22,8 +22,8 @@ from twisted.internet.protocol import Protocol
 from twisted.internet.protocol import connectionDone
 
 
-
 logger = logging.getLogger(__name__)
+
 
 class ExternalCommandWriterProtocol(Protocol):
     def __init__(self, external_command_file, batch_mode=True, **kwargs):
