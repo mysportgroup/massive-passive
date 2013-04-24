@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 import os
 import base64
@@ -54,7 +54,7 @@ class ExternalCommandWriterProtocol(Protocol):
             state = 'ERROR Could not write to external command file.\n'
         else:
             try:
-                with open(self.external_command_file, 'w') as fh:
+                with open(self.external_command_file, 'w+') as fh:
                     if self.batch_mode:
                         fh.write(data)
                         fh.flush()
