@@ -5,7 +5,7 @@ __author__ = 'Robin Wittler'
 __contact__ = 'r.wittler@mysportgroup.de'
 __copyright__ = '(c) 2012 by mysportgroup GmbH'
 __license__ = 'GPL3+'
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 
 import logging
@@ -87,7 +87,7 @@ class MassivePassiveScheduler(Scheduler):
         return True
 
     def remove_all_jobs(self):
-        for job_path, job in self.jobs.iteritems():
+        for job_path, job in self.jobs.copy().iteritems():
             self.unschedule_job(job)
             self.jobs.pop(job_path)
 
