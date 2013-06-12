@@ -152,15 +152,22 @@ class SSLValidationStore(object):
 
     def load_pem(self, filename):
         self.logger.debug('Trying to load %r.', filename)
-        with open(filename, 'r', 1) as fp:
-            try:
-                cert = load_certificate(FILETYPE_PEM, fp.read())
-            except SSLError as error:
-                self.logger.info('Could not load certificate from %r. Error was: %r', filename, error)
-                return None
-            else:
-                self.logger.debug('Successfully loaded certificate from %r', filename)
-                return cert
+        try:
+            with open(filename, 'r', 1) as fp:
+                    cert = load_certificate(FILETYPE_PEM, fp.read())
+        except Exception as error:
+            self.logger.info(
+                'Could not load certificate from %r. Error was: %r',
+                filename,
+                error
+            )
+            return None
+        else:
+            self.logger.debug(
+                'Successfully loaded certificate from %r',
+                filename
+            )
+            return cert
 
     def validate_cert_ca(self, cert):
         if self.cacert_key_identifier is not None and not self.is_cert_from_ca(cert):
