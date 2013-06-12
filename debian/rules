@@ -13,7 +13,7 @@ override_dh_auto_install:
 		rm -rvf -- debian/python-massive-passive-base/etc; \
 		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net; \
 		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts; \
-		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads, \
+		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads; \
 		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net; \
 		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts; \
 		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads; \
