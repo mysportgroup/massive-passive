@@ -5,7 +5,7 @@ Priority: optional
 Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 7)
 Vcs-git: git://github.com/mysportgroup/massive-passive.git
 Vcs-Browser: https://github.com/mysportgroup/massive-passive
-X-Python-Version: >= 2.6
+X-Python-Version: >= 2.6, << 3.0
 Standards-Version: 3.9.1
 
 Package: massive-passive-client

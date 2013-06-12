@@ -1,3 +1,9 @@
+massive-passive (0.3.7-wheezy1) wheezy; urgency=low
+
+  * port for debian wheezy
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 12 Jun 2013 16:36:37 +0200
+
 massive-passive (0.3.7-squeeze1) squeeze; urgency=low
 
   * new upstream release 0.3.7
