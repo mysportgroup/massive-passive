@@ -2,30 +2,6 @@
 
 PYVERS := $(shell pyversions -r)
 
-#override_dh_auto_build:
-#        set -ex; \
-#        for python in $(PYVERS); do \
-#                $$python setup.py build; \
-#        done
-#
-#override_dh_auto_clean:
-#        rm -rf build
-#        dh_auto_clean
-#
-#override_dh_auto_configure:
-#        rm -f requests/packages/urllib3/packages/six.py
-#
-#override_dh_auto_install:
-#        set -ex; \
-#        for python in $(PYVERS); do \
-#                $$python setup.py install --skip-build --root debian/python-requests \
-#                        --install-layout deb; \
-#        done
-
-
-
-
-
 %:
 	dh $@ --with python2 --buildsystem=python_distutils
 
@@ -37,7 +13,7 @@ override_dh_auto_install:
 		rm -rvf -- debian/python-massive-passive-base/etc; \
 		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net; \
 		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts; \
-		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads, \
+		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads; \
 		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net; \
 		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts; \
 		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads; \
@@ -64,41 +40,9 @@ override_dh_auto_install:
 			-e "s/Twisted//" \
 			-e "s/pyOpenSSL//"; \
 	done
-
 		
-
-
-#	mkdir -p debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/net
-#	mkdir -p debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/getopts
-#	mkdir -p debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/threads
-#	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/net/client.py debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/net
-#	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/getopts/client.py debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/getopts
-#	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/threads/client.py debian/python-massive-passive-client/usr/lib/python2.6/dist-packages/mplib/threads
-#	mkdir -p debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/net
-#	mkdir -p debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/getopts
-#	mkdir -p debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/threads
-#	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/net/server.py debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/net
-#	cp -av debian/python-massive-passive-base/usr/lib/python2.6/dist-packages/mplib/getopts/server.py debian/python-massive-passive-server/usr/lib/python2.6/dist-packages/mplib/getopts
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/client.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/server.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/getopts/client.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/getopts/server.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/threads/client.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/threads/server.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/net/client.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/net/server.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/getopts/client.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/getopts/server.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/threads/client.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/lib/python[0-9].[0-9]/dist-packages/mplib/threads/server.py
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-client
-#	rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-server
-#	find debian/python-massive-passive-base/usr -type f -name "requires.txt" -print0 | xargs -0 sed -i \
-#	    -e "s/Twisted//" \
-#	    -e "s/pyOpenSSL//"
-#
 override_dh_auto_build:
 
 override_dh_python2:
-	dh_python2 -V 2.6-3.0
+	dh_python2 -V 2.6-2.9
 
