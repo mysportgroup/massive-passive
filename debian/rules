@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-PYVERS := $(shell pyversions -i)
+PYVERS := $(shell pyversions -r)
 
 #override_dh_auto_build:
 #        set -ex; \
@@ -32,34 +32,34 @@ PYVERS := $(shell pyversions -i)
 override_dh_auto_install:
 
 	for pyver in $(PYVERS); do \
-		$$pyver setup.py install --root=debian/python-massive-passive-base --install-layout=deb 
-		rm -rvf -- debian/python-massive-passive-base/usr/sbin
-		rm -rvf -- debian/python-massive-passive-base/etc
-		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net
-		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts
-		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads
-		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net
-		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts
-		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads
-		mkdir -p debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/net
-		mkdir -p debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/getopts
-		mkdir -p debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/threads
-		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/server.py debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/net
-		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/server.py debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/getopts
-		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/client.py
-		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/server.py
-		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/getopts/client.py
-		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/getopts/server.py
-		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/threads/client.py
-		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/threads/server.py
-		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/client.py
-		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/server.py
-		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/client.py
-		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/server.py
-		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/client.py
-		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/server.py
-		rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-client
-		rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-server
+		$$pyver setup.py install --root=debian/python-massive-passive-base --install-layout=deb; \
+		rm -rvf -- debian/python-massive-passive-base/usr/sbin; \
+		rm -rvf -- debian/python-massive-passive-base/etc; \
+		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net; \
+		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts; \
+		mkdir -p debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads, \
+		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/net; \
+		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/getopts; \
+		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/client.py debian/python-massive-passive-client/usr/lib/$$pyver/dist-packages/mplib/threads; \
+		mkdir -p debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/net; \
+		mkdir -p debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/getopts; \
+		mkdir -p debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/threads; \
+		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/server.py debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/net; \
+		cp -av debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/server.py debian/python-massive-passive-server/usr/lib/$$pyver/dist-packages/mplib/getopts; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/client.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/net/server.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/getopts/client.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/getopts/server.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/threads/client.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/pyshared/mplib/threads/server.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/client.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/net/server.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/client.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/getopts/server.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/client.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/lib/$$pyver/dist-packages/mplib/threads/server.py; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-client; \
+		rm -rvf -- debian/python-massive-passive-base/usr/share/massive-passive-server; \
 		find debian/python-massive-passive-base/usr -type f -name "requires.txt" -print0 | xargs -0 sed -i \
 			-e "s/Twisted//" \
 			-e "s/pyOpenSSL//"; \
