@@ -1,6 +1,6 @@
-massive-passive (0.3.7-ubuntu1) precise; urgency=low
+massive-passive (0.3.7-precise1) precise; urgency=low
 
-  * 
+  * make port for ubuntu precise
 
  -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 12 Jun 2013 18:31:58 +0200
 
