@@ -6,6 +6,7 @@ __contact__ = 'r.wittler@mysportgroup.de'
 __license__ = 'GPL3+'
 __copyright__ = '(c) 2013 by mysportgroup.de'
 
+import os
 import logging
 import pyinotify
 from functools import wraps
@@ -41,8 +42,19 @@ class ProcessConfigEvents(pyinotify.ProcessEvent):
     @filename_endswith('.cfg')
     def process_default(self, event):
         self.logger.debug(
-            'Received %r event for %r', event.maskname, event.name
+            'Received %r event for %r', event.maskname, event.pathname
         )
+
+        if event.maskname == 'IN_CREATE' and not os.path.islink(event.pathname):
+            # if a link is created in the watched dir, then there will be only
+            # a IN_CREATE event. But a regular file, which will be copied, have
+            # also a IN_CLOSE_WRITE event - and we wait for that event.
+            self.logger.debug(
+                'Received %r for regular file %r - ignoring it.',
+                event.maskname,
+                event.pathname
+            )
+            return None
 
         return self.call_callback(event)
 
@@ -59,8 +71,19 @@ class ProcessPemEvents(ProcessConfigEvents):
     @filename_endswith('.pem')
     def process_default(self, event):
         self.logger.debug(
-            'Received %r event for %r', event.maskname, event.name
+            'Received %r event for %r', event.maskname, event.pathname
         )
+
+        if event.maskname == 'IN_CREATE' and not os.path.islink(event.pathname):
+            # if a link is created in the watched dir, then there will be only
+            # a IN_CREATE event. But a regular file, which will be copied, have
+            # also a IN_CLOSE_WRITE event - and we wait for that event.
+            self.logger.debug(
+                'Received %r for regular file %r - ignoring it.',
+                event.maskname,
+                event.pathname
+            )
+            return None
 
         return self.call_callback(event)
 

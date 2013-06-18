@@ -13,7 +13,10 @@ import signal
 import logging
 from threading import Event
 from pyinotify import IN_DELETE
+from pyinotify import IN_CREATE
+from pyinotify import IN_MOVED_TO
 from mplib.daemon import daemonize
+from pyinotify import IN_MOVED_FROM
 from twisted.internet import reactor
 from pyinotify import IN_CLOSE_WRITE
 from setproctitle import setproctitle
@@ -75,6 +78,9 @@ class Main(object):
         self.watch_manager = WatchManager()
         callbacks = {
             'IN_CLOSE_WRITE': self.add_pem_from_event,
+            'IN_CREATE': self.add_pem_from_event,
+            'IN_MOVED_TO': self.add_pem_from_event,
+            'IN_MOVED_FROM': self.remove_pem_from_event,
             'IN_DELETE': self.remove_pem_from_event,
             }
 
@@ -85,7 +91,7 @@ class Main(object):
 
         self.watch_manager.add_watch(
             options.allowed_client_cert_dir,
-            IN_CLOSE_WRITE|IN_DELETE,
+            IN_CLOSE_WRITE|IN_DELETE|IN_CREATE|IN_MOVED_TO|IN_MOVED_FROM,
             rec=False,
             auto_add=True
         )
