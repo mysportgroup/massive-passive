@@ -1,3 +1,10 @@
+massive-passive (0.3.8-squeeze1) squeeze; urgency=low
+
+  * new upstream release 0.3.8
+  * change init script a litle bit ...
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Tue, 18 Jun 2013 18:04:20 +0200
+
 massive-passive (0.3.7-squeeze1) squeeze; urgency=low
 
   * new upstream release 0.3.7
