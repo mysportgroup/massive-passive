@@ -7,7 +7,7 @@ from distutils.core import setup
 
 setup(
         name='massive-passive',
-        version='0.3.7',
+        version='0.3.8',
         description='A scheduler for passive nagios/icinga checks. This includes a server and client.',
         author='Robin Wittler',
         author_email='r.wittler@mysportgroup.de',
