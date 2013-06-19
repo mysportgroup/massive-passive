@@ -1,3 +1,10 @@
+massive-passive (0.3.8-wheezy1) wheezy; urgency=low
+
+  * new upstream release 0.3.8
+  * change init scripts to make use of --signal 15
+
+ -- Robin Wittler <r.wittler@mysportgroup.de>  Wed, 19 Jun 2013 11:45:55 +0200
+
 massive-passive (0.3.7-wheezy1) wheezy; urgency=low
 
   * port for debian wheezy
