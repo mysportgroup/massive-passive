@@ -21,20 +21,39 @@ from twisted.internet.protocol import Factory
 from twisted.internet.protocol import Protocol
 from twisted.internet.protocol import connectionDone
 
+from cStringIO import StringIO
+
 
 logger = logging.getLogger(__name__)
 
 
 class ExternalCommandWriterProtocol(Protocol):
-    def __init__(self, external_command_file, batch_mode=True, **kwargs):
+    def __init__(self, external_command_file, buffers, batch_mode=True, **kwargs):
         self.external_command_file = external_command_file
+        self.buffers = buffers
         self.batch_mode = batch_mode
         self.logger = logging.getLogger(
             '%s.%s'
             %(self.__class__.__module__, self.__class__.__name__)
         )
 
-    def dataReceived(self, data):
+    def connectionMade(self):
+        self.buffer, self.propagated_len_data, self.chunked_data = \
+            self.buffers.setdefault(
+                self.transport.getPeer(),
+                [StringIO(), 0, False]
+            )
+        self.logger.debug(
+            'Create buffer for %s: %r',
+            self.transport.getPeer(),
+            (
+                self.buffer,
+                self.propagated_len_data,
+                self.chunked_data
+            )
+        )
+
+    def dataReceivedOldProtocol(self, data):
         decoded_data = base64.decodestring(data)
         self.logger.debug('Received data from %s: %r', self.transport.getPeer(), decoded_data)
         state = self.writeToCommandFile(decoded_data)
@@ -44,6 +63,94 @@ class ExternalCommandWriterProtocol(Protocol):
         )
         self.transport.write(base64.encodestring(state))
 
+    def dataReceived(self, data):
+        '''
+        This version handles the new protocol (with len header)
+        '''
+
+        len_data = len(data)
+
+        if not self.chunked_data:
+            # must be initial data
+            self.logger.debug(
+                'Received initial data with len %d from %s',
+                len_data,
+                self.transport.getPeer()
+            )
+            self.reset_buffer()
+            try:
+                self.propagated_len_data, data = data.split(' ', 1)
+            except ValueError:
+                # so the format is not like "len_count <base64_data>
+                # and therefor we assume that the message is send in the
+                # old format.
+                self.logger.error(
+                    'Received a message in the old format.'
+                )
+                return self.dataReceivedOldProtocol(data)
+            self.propagated_len_data = int(self.propagated_len_data)
+            self.logger.debug(
+                'Propagated len from %s is %d',
+                self.transport.getPeer(),
+                self.propagated_len_data
+            )
+            self.buffer.write(data)
+
+            if self.propagated_len_data == self.buffer.tell():
+                # we received the complete message at once
+                self.logger.debug(
+                    'Received all data at once from %s',
+                    self.transport.getPeer()
+                )
+            else:
+                # ok - we receive the complete message in multiple chunks
+                self.logger.debug(
+                    'Received data from %s is a chunk starter. ' +
+                    'We miss %d bytes',
+                    self.transport.getPeer(),
+                    self.propagated_len_data - self.buffer.tell()
+                )
+                self.chunked_data = True
+
+                self.update_buffer(
+                    self.transport.getPeer(),
+                    self.buffer,
+                    self.propagated_len_data,
+                    self.chunked_data
+                )
+                return
+        else:
+            # must be a chunk of data
+            self.logger.debug(
+                'Received another chunk of data with len %d from %s',
+                len_data,
+                self.transport.getPeer()
+            )
+            self.buffer.write(data)
+            if self.propagated_len_data != self.buffer.tell():
+                self.logger.debug(
+                    'Chunk from %s is not complete. ' +
+                    'We miss %d bytes.',
+                    self.transport.getPeer(),
+                    self.propagated_len_data - self.buffer.tell()
+                )
+                self.update_buffer(
+                    self.transport.getPeer(),
+                    self.buffer,
+                    self.propagated_len_data,
+                    self.chunked_data
+                )
+                return
+            else:
+                self.logger.debug(
+                    'All chunks from %s are received.',
+                    self.transport.getPeer()
+                )
+
+        self.buffer.seek(0, 0)
+        decoded_data = base64.decodestring(self.buffer.read())
+        self.reset_buffer()
+        self.writeToCommandFile(decoded_data)
 
     def writeToCommandFile(self, data):
         if not os.path.exists(self.external_command_file):
@@ -84,11 +191,29 @@ class ExternalCommandWriterProtocol(Protocol):
             self.transport.getPeer(), reason.getErrorMessage()
         )
 
+        self.remove_buffer()
         self.transport.loseConnection()
         self.transport = None
 
+    def reset_buffer(self):
+        self.buffer.seek(0, 0)
+        self.buffer.truncate()
+
+    def remove_buffer(self):
+        peer = self.buffers.pop(self.transport.getPeer(), None)
+        self.logger.debug(
+            'Removing buffer of peer %s which was: %r',
+            self.transport.getPeer(),
+            peer
+        )
+
+    def update_buffer(self, key, *values):
+        return self.buffers.update({key: values})
+
+
 class ExternalCommandWriterFactory(Factory):
     protocol = ExternalCommandWriterProtocol
+    buffers = dict()
 
     def __init__(self, external_command_file):
         self.external_command_file = external_command_file
@@ -101,6 +226,7 @@ class ExternalCommandWriterFactory(Factory):
         self.logger.info('Build protocol for %r', addr)
         return self.protocol(
             self.external_command_file,
+            self.buffers
         )
 
 
@@ -121,13 +247,13 @@ class SSLValidationStore(object):
         with open(cacert, 'r', 1) as  fp:
             self.cacert = load_certificate(FILETYPE_PEM, fp.read())
 
-        try:
-            self.cacert_key_identifier = self.cacert.get_extension(1).get_data()
-        except AttributeError:
-            # the debian squeeze python-openssl version has no get_extension attribute :(
-            # so ... we set cacert_key_identifier to None.
-            # On later code we check if this attr is None, if so, we only check subject string.
-            self.cacert_key_identifier = None
+        #try:
+        #    self.cacert_key_identifier = self.cacert.get_extension(1).get_data()
+        #except AttributeError:
+        #    # the debian squeeze python-openssl version has no get_extension attribute :(
+        #    # so ... we set cacert_key_identifier to None.
+        #    # On later code we check if this attr is None, if so, we only check subject string.
+        self.cacert_key_identifier = None
 
         self._store_lock = Lock()
         self._store = dict()

@@ -34,20 +34,11 @@ class PassiveCheckSubmitClient(object):
 
     def run(self):
         self.connect()
-        len_message, len_encoded_message, len_send_message = self.send_message()
-        status, server_received_length, answer = self.receive_answer()
-        if server_received_length != len_message:
-            self.logger.error(
-                'The Server at %r received %d bytes, but our message was %d bytes long.',
-                self.ssl_sock.getpeername(),
-                server_received_length,
-                len_message
-            )
-        else:
-            self.logger.info(
-                'Communication with Server at %r was successful.',
-                self.ssl_sock.getpeername()
-            )
+        self.send_message()
+        self.logger.info(
+            'Communication with Server at %r ended.',
+            self.ssl_sock.getpeername()
+        )
         self.disconnect()
 
     def start(self):
@@ -62,16 +53,17 @@ class PassiveCheckSubmitClient(object):
         encoded_message = base64.encodestring(self.message)
         len_encoded_message = len(encoded_message)
         self.logger.debug('Sending %r to %r.', self.message, self.ssl_sock.getpeername())
-        len_send_message = self.ssl_sock.write(
-            base64.encodestring(self.message)
+        len_send_message = self.ssl_sock.sendall(
+            #base64.encodestring(self.message)
+            '%s %s' %(len_encoded_message, encoded_message)
         )
 
-        if not len_encoded_message == len_send_message:
-            self.logger.error(
-                'Byte length of base64 message (%d) and length of bytes (%d) send to %r are not equal.'
-                %(len_encoded_message, len_send_message, self.ssl_sock.getpeername())
-            )
-            return False
+        #if not len_encoded_message == len_send_message:
+        #    self.logger.error(
+        #        'Byte length of base64 message (%d) and length of bytes (%d) send to %r are not equal.'
+        #        %(len_encoded_message, len_send_message, self.ssl_sock.getpeername())
+        #    )
+        #    return False
         return len(self.message), len_encoded_message, len_send_message
 
     def receive_answer(self):
